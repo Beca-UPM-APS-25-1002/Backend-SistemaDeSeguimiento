@@ -6,6 +6,8 @@ Lista de casos de uso/historias de usuario del sistema
 - [ ] Crear cuenta
 - [ ] Recuperar contraseña
 - [ ] Añadir un seguimiento
+- [ ] Modificar un seguimiento
+- [ ] Ver los seguimientos anteriores
 
 ## Casos de uso admin
 - [ ] Iniciar sesión
