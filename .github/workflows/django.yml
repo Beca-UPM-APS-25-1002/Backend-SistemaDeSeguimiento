@@ -49,5 +49,5 @@ jobs:
       - name: Run tests
         run: |
           cd app
-          PYTHONPATH=pipenv run python manage.py migrate
-          PYTHONPATH=pipenv run python manage.py test
+          pipenv run python manage.py migrate
+          pipenv run python manage.py test
