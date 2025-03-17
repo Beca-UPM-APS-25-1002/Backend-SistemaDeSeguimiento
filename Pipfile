@@ -6,7 +6,9 @@ name = "pypi"
 [packages]
 django = "*"
 psycopg = {extras = ["pool", "binary"], version = "*"}
-django-rest-framework = "*"
+markdown = "*"
+django-filter = "*"
+djangorestframework = "*"
 
 [dev-packages]
 
