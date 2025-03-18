@@ -91,9 +91,8 @@ class Profesor(AbstractUser):
 
     objects = ProfesorManager()
 
-    USERNAME_FIELD = "email"  # Use email as the unique identifier
-    REQUIRED_FIELDS = ["nombre"]  # Required fields for createsuperuser
-
+    USERNAME_FIELD = "email"  # Usar email en vez de username
+    REQUIRED_FIELDS = ["nombre"]  # Campos requeridos de superuser
     def __str__(self):
         return self.nombre
 
@@ -112,7 +111,7 @@ class Docencia(models.Model):
         return self.modulo.año_academico
 
     class Meta:
-        # Ensure a professor isn't assigned to the same module and group twice in the same academic year
+        # Garantizar que un profesor no sea asignado al mismo módulo y grupo dos veces en el mismo curso académico.
         unique_together = ["profesor", "grupo", "modulo"]
         indexes = [
             models.Index(fields=["profesor", "modulo"]),
@@ -159,7 +158,7 @@ class Seguimiento(models.Model):
         return f"Seguimiento {self.docencia} - Mes {self.mes}"
 
     class Meta:
-        # Ensure one tracking per month per teaching assignment
+        # Garantizar un seguimiento al mes por docencia
         unique_together = ["docencia", "mes"]
         indexes = [
             models.Index(fields=["mes"]),
