@@ -1,9 +1,7 @@
 from django.contrib import admin
-from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import Group
-from django.contrib.auth.admin import GroupAdmin
+from django.contrib.auth.admin import GroupAdmin  # noqa: F401
 from django.utils.html import format_html
-from rest_framework.authtoken.models import Token
 from django.forms import ModelForm
 from django import forms
 import calendar
