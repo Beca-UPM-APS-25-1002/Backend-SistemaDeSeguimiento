@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.functional import cached_property
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.contrib.auth.hashers import make_password
 
 
 class Ciclo(models.Model):
@@ -36,7 +37,7 @@ class Modulo(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.nombre} - {self.ciclo}"
+        return f"{self.nombre} - {self.ciclo} - {self.año_academico}"
 
 
 class UnidadDeTemario(models.Model):
@@ -113,6 +114,14 @@ class Profesor(AbstractUser):
 
     def __str__(self):
         return self.nombre
+
+    def save(self, *args, **kwargs):
+        """Hasheamos la contraseña en caso de que no haya sido hasheada"""
+        if self.password and not self.password.startswith(
+            ("pbkdf2_sha256$", "bcrypt$", "argon2")
+        ):
+            self.password = make_password(self.password)
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Profesor"
