@@ -1,10 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.functional import cached_property
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 class Ciclo(models.Model):
     nombre = models.CharField(null=False, max_length=255, primary_key=True)
+
+    def __str__(self):
+        return self.nombre
 
 
 class Grupo(models.Model):
@@ -12,6 +16,9 @@ class Grupo(models.Model):
     ciclo = models.ForeignKey(
         Ciclo, on_delete=models.RESTRICT, to_field="nombre", related_name="grupos"
     )
+
+    def __str__(self):
+        return f"{self.nombre} - {self.ciclo}"
 
 
 class Modulo(models.Model):
@@ -28,6 +35,9 @@ class Modulo(models.Model):
             models.Index(fields=["ciclo"]),
         ]
 
+    def __str__(self):
+        return f"{self.nombre} - {self.ciclo}"
+
 
 class UnidadDeTemario(models.Model):
     numero_tema = models.IntegerField(null=False)
@@ -40,6 +50,13 @@ class UnidadDeTemario(models.Model):
     @property
     def año_academico(self):
         return self.modulo.año_academico
+
+    def __str__(self):
+        return f"T{self.numero_tema} - {self.titulo}"
+
+    class Meta:
+        verbose_name = "Unidad de Temario"
+        verbose_name_plural = "Unidades de Temario"
 
 
 class ProfesorManager(BaseUserManager):
@@ -93,8 +110,13 @@ class Profesor(AbstractUser):
 
     USERNAME_FIELD = "email"  # Usar email en vez de username
     REQUIRED_FIELDS = ["nombre"]  # Campos requeridos de superuser
+
     def __str__(self):
         return self.nombre
+
+    class Meta:
+        verbose_name = "Profesor"
+        verbose_name_plural = "Profesores"
 
 
 class Docencia(models.Model):
@@ -141,7 +163,7 @@ class Seguimiento(models.Model):
     justificacion_estado = models.CharField(max_length=255, blank=True)
     cumple_programacion = models.BooleanField(default=True)
     justificacion_cumple_programacion = models.CharField(max_length=255, blank=True)
-    mes = models.IntegerField()
+    mes = models.IntegerField(validators=[MaxValueValidator(12), MinValueValidator(1)])
     docencia = models.ForeignKey(
         Docencia, on_delete=models.CASCADE, related_name="seguimientos"
     )

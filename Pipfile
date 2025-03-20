@@ -9,6 +9,7 @@ psycopg = {extras = ["pool", "binary"], version = "*"}
 markdown = "*"
 django-filter = "*"
 djangorestframework = "*"
+djoser = "*"
 
 [dev-packages]
 
