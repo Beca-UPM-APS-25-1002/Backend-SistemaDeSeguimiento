@@ -13,25 +13,51 @@ Backend de la aplicación de seguimiento
 
 ## Endpoints
 
-Filtra por defecto por el último año academico.
+### Autenticación
 
-- `/login`
-- `/register`
-- `/reset-password`
-- `/profesores/` CRUD de profesores
-- `/profesores/<id_profesor>` CRUD de un profesor
-- `/ciclos` CRUD de ciclos
-- `/ciclos/<nombre_ciclo>` CRUD de un ciclo
-- `/grupos` CRUD de grupos
-- `/grupos/<nombre_grupo>` CRUD de un grupo
-- `/modulos/` CRUD de modulos
-- `/modulos/<id_modulo>` CRUD de un modulo
-- `/modulos/<id_modulo>/temario/` CRUD del temario de un modulo
-- `/modulos/<id_modulo>/temario/<id_temario>` CRUD de una unidad de temario de un modulo
-- `/docencias/` CRUD de las docencias
-- `/docencias/<id_docencia>` CRUD de una de las docencias
+#### Registro en la app - POST `/auth/users/`
+
+```json
+{
+  "email": "email@dominio.com",
+  "nombre": "Fulano de Tal",
+  "password": "password"
+}
+```
+
+#### Login - POST `/auth/token/login/`
+
+```json
+{
+  "email": "email@dominio.com",
+  "password": "password"
+}
+```
+
+Si es correcto devuelve un `json` como
+
+```json
+{ "auth_token": "b704c9fc3655635646356ac2950269f352ea1139" }
+```
+
+Para usarlo, añadir el header: `Authorization: Token b704c9fc3655635646356ac2950269f352ea1139`
+
+#### Login - POST `/auth/token/logout/`
+
+Necesita autenticación
+
+```json
+{
+    "b704c9fc3655635646356ac2950269f352ea1139"
+}
+```
+
+Se invalida el token
+
+### WIP
+
 - `/seguimientos/` CRUD de los seguimientos
 - `/seguimientos/<id_seguimiento>` CRUD de uno de los seguimientos
 - `/seguimientos-faltantes/<mes>` Devuelve una lista de los seguimientos no realizados en el mes indicado del último año academico
 - `/enviar-recordatorio/` Envia un recordatorio por email a todas las docencias que se incluyan en el cuerpo de la petición
-- `/descargar-seguimientos/<mes>` Devuelve un .xlsx con los seguimientos del mes
+- `/descargar-seguimientos/<mes>` Devuelve un .xlsx con los seguimientos del mes indicado del último año academico
