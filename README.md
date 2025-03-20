@@ -1,5 +1,14 @@
 # Backend-SistemaDeSeguimiento
 
+- [Backend-SistemaDeSeguimiento](#backend-sistemadeseguimiento)
+  - [Setup del entorno de desarollo](#setup-del-entorno-de-desarollo)
+  - [Endpoints](#endpoints)
+    - [Autenticación](#autenticación)
+      - [Registro en la app - POST `/auth/users/`](#registro-en-la-app---post-authusers)
+      - [Login - POST `/auth/token/login/`](#login---post-authtokenlogin)
+      - [Login - POST `/auth/token/logout/`](#login---post-authtokenlogout)
+    - [WIP](#wip)
+
 Backend de la aplicación de seguimiento
 
 - [Diagrama Entidad-Relación](https://dbdiagram.io/e/67cf0d1975d75cc84489350e/67d0147c75d75cc844a50b2c)
