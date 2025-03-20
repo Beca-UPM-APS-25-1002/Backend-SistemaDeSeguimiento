@@ -18,7 +18,8 @@ Backend de la aplicación de seguimiento
 1. Iniciar un contenedor de Postgres `docker run -e POSTGRES_PASSWORD=1234 -e POSTGRES_DB=seguimientos -d -p 5432:5432 postgres:latest`
 2. Iniciar el shell pipenv `pipenv shell`
 3. Instalar las dependencias `pipenv install`
-4. Iniciar la aplicación `python manage.py runserver`
+4. Añadir los ficheros estaticos `python manage.py collectstatic`
+5. Iniciar la aplicación `python manage.py runserver`
 
 ## Endpoints
 

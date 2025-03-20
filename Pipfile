@@ -10,6 +10,7 @@ markdown = "*"
 django-filter = "*"
 djangorestframework = "*"
 djoser = "*"
+django-import-export = {extras = ["xlsx"], version = "*"}
 
 [dev-packages]
 

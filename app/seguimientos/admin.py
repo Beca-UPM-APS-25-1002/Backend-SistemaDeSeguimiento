@@ -6,6 +6,8 @@ from django.utils.html import format_html
 from django.urls import path
 from django.forms import ModelForm
 from django import forms
+from import_export import resources, fields
+from import_export.admin import ImportExportModelAdmin
 import calendar
 
 from .models import (
@@ -245,8 +247,50 @@ class DocenciaAdmin(admin.ModelAdmin):
     get_año_academico.admin_order_field = "modulo__año_academico"
 
 
+class SeguimientoResource(resources.ModelResource):
+    mes_texto = fields.Field(column_name="Mes", attribute="mes")
+
+    ciclo = fields.Field(column_name="Ciclo", attribute="docencia__modulo__ciclo")
+
+    nombre_modulo = fields.Field(
+        column_name="Nombre Modulo", attribute="docencia__modulo__nombre"
+    )
+
+    class Meta:
+        model = Seguimiento
+        fields = [
+            "docencia__profesor__nombre",
+            "docencia__grupo",
+            "temario_alcanzado__numero_tema",
+            "temario_alcanzado__titulo",
+            "ultimo_contenido_impartido",
+            "mes",
+            "estado",
+            "justificacion_estado",
+            "cumple_programacion",
+            "justificacion_cumple_programacion",
+        ]
+        export_order = [
+            "docencia__profesor__nombre",
+            "ciclo",
+            "nombre_modulo",
+            "docencia__grupo",
+            "temario_alcanzado__numero_tema",
+            "temario_alcanzado__titulo",
+            "ultimo_contenido_impartido",
+            "mes_texto",
+            "estado",
+            "justificacion_estado",
+            "cumple_programacion",
+            "justificacion_cumple_programacion",
+        ]
+
+    def dehydrate_mes_texto(self, obj):
+        return calendar.month_name[obj.mes].capitalize()
+
+
 @admin.register(Seguimiento)
-class SeguimientoAdmin(admin.ModelAdmin):
+class SeguimientoAdmin(ImportExportModelAdmin):
     list_display = [
         "docencia",
         "get_mes",
@@ -266,6 +310,7 @@ class SeguimientoAdmin(admin.ModelAdmin):
         "docencia__grupo__nombre",
     ]
     autocomplete_fields = ["docencia", "temario_alcanzado"]
+    resource_classes = [SeguimientoResource]
     fieldsets = (
         (
             None,
