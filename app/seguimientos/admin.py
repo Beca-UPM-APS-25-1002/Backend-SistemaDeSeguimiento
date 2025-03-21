@@ -7,7 +7,7 @@ from django.urls import path
 from django.forms import ModelForm
 from django import forms
 from import_export import resources, fields
-from import_export.admin import ImportExportModelAdmin
+from import_export.admin import ExportMixin
 import calendar
 
 from .models import (
@@ -288,7 +288,7 @@ class SeguimientoResource(resources.ModelResource):
 
 
 @admin.register(Seguimiento)
-class SeguimientoAdmin(ImportExportModelAdmin):
+class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
     list_display = [
         "docencia",
         "get_mes",
