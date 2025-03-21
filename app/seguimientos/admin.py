@@ -8,6 +8,7 @@ from django.forms import ModelForm
 from django import forms
 from import_export import resources, fields
 from import_export.admin import ExportMixin
+from dal import autocomplete
 import calendar
 
 from .models import (
@@ -31,6 +32,19 @@ admin.site.unregister(Group)
 class DocenciaInline(admin.TabularInline):
     model = Docencia
     extra = 1
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Filter grupos based on modulo's ciclo
+        if db_field.name == "grupo" and hasattr(self, "parent_obj") and self.parent_obj:
+            kwargs["queryset"] = Grupo.objects.filter(
+                ciclo=self.parent_obj.ciclo
+            ).filter(nombre__contains=str(self.parent_obj.curso))
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        # Store the parent object (modulo) for use in formfield_for_foreignkey
+        self.parent_obj = obj
+        return super().get_formset(request, obj, **kwargs)
 
 
 class GrupoInline(admin.TabularInline):
@@ -212,8 +226,6 @@ class ProfesorAdmin(admin.ModelAdmin):
         ),
     )
 
-    inlines = [DocenciaInline]
-
     @admin.display(boolean=True, description="Administrador")
     def es_admin(self, obj):
         return obj.is_admin
@@ -228,17 +240,6 @@ class DocenciaAdmin(admin.ModelAdmin):
     list_filter = ["modulo__año_academico", "grupo"]
     search_fields = ["profesor__nombre", "modulo__nombre", "grupo__nombre"]
     autocomplete_fields = ["profesor", "grupo", "modulo"]
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """Filter the 'modulo' dropdown to only show modules from a selected 'año_academico'."""
-        if db_field.name == "modulo":
-            # Get the año_academico filter from the request (if applied)
-            año_academico = request.GET.get("año_academico")
-            if año_academico:
-                kwargs["queryset"] = Modulo.objects.filter(año_academico=año_academico)
-            else:
-                kwargs["queryset"] = Modulo.objects.all()
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_año_academico(self, obj):
         return obj.año_academico
@@ -287,8 +288,25 @@ class SeguimientoResource(resources.ModelResource):
         return "Sí" if obj.cumple_programacion else "No"
 
 
+class SeguimientoForm(forms.ModelForm):
+    class Meta:
+        model = Seguimiento
+        fields = "__all__"
+        widgets = {
+            "temario_alcanzado": autocomplete.ModelSelect2(
+                url="/admin/seguimientos/seguimiento/temario-autocomplete",
+                forward=["docencia"],
+                attrs={
+                    "data-placeholder": "Seleccione el temario alcanzado...",
+                    "data-minimum-input-length": 0,
+                },
+            ),
+        }
+
+
 @admin.register(Seguimiento)
 class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
+    form = SeguimientoForm
     list_display = [
         "docencia",
         "get_mes",
@@ -344,3 +362,51 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
 
     get_mes.short_description = "Mes"
     get_mes.admin_order_field = "mes"
+
+    class Media:
+        js = [
+            "admin/js/vendor/jquery/jquery.min.js",
+            "autocomplete_light/jquery.init.js",
+            "autocomplete_light/autocomplete.init.js",
+        ]
+        css = {
+            "all": [
+                "admin/css/vendor/select2/select2.min.css",
+                "autocomplete_light/select2.css",
+            ],
+        }
+
+    class TemarioAutocomplete(autocomplete.Select2QuerySetView):
+        def get_queryset(self):
+            qs = UnidadDeTemario.objects.all()
+
+            # Get the docencia from the forwar/home/rowiz/Development/APS-2025/Backend-SistemaDeSeguimiento/app/seguimientos/admin.pyded value
+            docencia = self.forwarded.get("docencia", None)
+            if docencia:
+                try:
+                    # Filter by the selected docencia's modulo
+                    docencia_obj = Docencia.objects.get(pk=docencia)
+                    qs = qs.filter(modulo=docencia_obj.modulo)
+                except Docencia.DoesNotExist:
+                    return UnidadDeTemario.objects.none()
+            else:
+                return UnidadDeTemario.objects.none()
+
+            if self.q:
+                qs = qs.filter(titulo__icontains=self.q)
+
+            return qs
+
+        def get_result_label(self, item):
+            return f"T{item.numero_tema} - {item.titulo}"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "temario-autocomplete/",
+                self.TemarioAutocomplete.as_view(),
+                name="temario-autocomplete",
+            ),
+        ]
+        return custom_urls + urls
