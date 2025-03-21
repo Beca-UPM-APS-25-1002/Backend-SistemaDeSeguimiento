@@ -296,10 +296,6 @@ class SeguimientoForm(forms.ModelForm):
             "temario_alcanzado": autocomplete.ModelSelect2(
                 url="/admin/seguimientos/seguimiento/temario-autocomplete",
                 forward=["docencia"],
-                attrs={
-                    "data-placeholder": "Seleccione el temario alcanzado...",
-                    "data-minimum-input-length": 0,
-                },
             ),
         }
 
