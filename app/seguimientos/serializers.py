@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Seguimiento, Profesor, Modulo, UnidadDeTemario
+from .models import Seguimiento, Profesor, Modulo, Docencia, UnidadDeTemario
 
 
 class UnidadDeTemarioSerializer(serializers.ModelSerializer):
@@ -18,6 +18,12 @@ class ProfesorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profesor
         fields = ["id", "nombre", "email"]
+
+
+class DocenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Docencia
+        fields = "__all__"
 
 
 class SeguimientoSerializer(serializers.ModelSerializer):
