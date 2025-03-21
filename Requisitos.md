@@ -18,7 +18,7 @@ Lista de casos de uso/historias de usuario del sistema
 - [x] Visualizar la lista de seguimientos de un mes, pudiendo filtrar por ciclo, modulo, grupo o profesor
   - [ ] Visualizar aquellos seguimientos que no se han completado
 - [ ] Mandar un correo a los profesores de los modulos/grupos que no tienen seguimiento creado para un mes concreto
-- [ ] Exportar los seguimientos de un mes en formato XLSX
+- [x] Exportar los seguimientos de un mes en formato XLSX
 - [x] Empezar un nuevo año escolar, con la capacidad de clonar modulos y temarios
 - [x] CRUD Profesores
 - [x] CRUD Modulos
