@@ -1,24 +1,25 @@
-from django.contrib import admin, messages
-from django.shortcuts import render, redirect
-from django.contrib.auth.models import Group
-from django.contrib.auth.admin import GroupAdmin  # noqa: F401
-from django.utils.html import format_html
-from django.urls import path
-from django.forms import ModelForm
-from django import forms
-from import_export import resources, fields
-from import_export.admin import ExportMixin
-from dal import autocomplete
 import calendar
+
+from dal import autocomplete
+from django import forms
+from django.contrib import admin, messages
+from django.contrib.auth.admin import GroupAdmin  # noqa: F401
+from django.contrib.auth.models import Group
+from django.forms import ModelForm
+from django.shortcuts import redirect, render
+from django.urls import path
+from django.utils.html import format_html
+from import_export import fields, resources
+from import_export.admin import ExportMixin
 
 from .models import (
     Ciclo,
+    Docencia,
     Grupo,
     Modulo,
-    UnidadDeTemario,
     Profesor,
-    Docencia,
     Seguimiento,
+    UnidadDeTemario,
 )
 
 admin.site.site_header = "Administración de Seguimientos"
