@@ -195,3 +195,14 @@ class Seguimiento(models.Model):
             models.Index(fields=["mes"]),
             models.Index(fields=["docencia", "mes"]),
         ]
+
+    def save(self, *args, **kwargs):
+        """Actualiza automaticamente el estado impartido dependiendo de el utlimo tema impartido"""
+        super().save(*args, **kwargs)
+
+        unidades = UnidadDeTemario.objects.filter(modulo=self.temario_alcanzado.modulo)
+
+        unidades.update(impartido=False)
+        unidades.filter(numero_tema__lte=self.temario_alcanzado.numero_tema).update(
+            impartido=True
+        )
