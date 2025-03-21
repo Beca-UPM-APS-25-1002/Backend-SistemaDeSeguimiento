@@ -248,45 +248,43 @@ class DocenciaAdmin(admin.ModelAdmin):
 
 
 class SeguimientoResource(resources.ModelResource):
-    mes_texto = fields.Field(column_name="Mes", attribute="mes")
-
-    ciclo = fields.Field(column_name="Ciclo", attribute="docencia__modulo__ciclo")
-
-    nombre_modulo = fields.Field(
-        column_name="Nombre Modulo", attribute="docencia__modulo__nombre"
+    profesor = fields.Field(
+        column_name="Profesor", attribute="docencia__profesor__nombre"
     )
+    mes = fields.Field(column_name="Mes", attribute="mes")
+    ciclo = fields.Field(column_name="Ciclo", attribute="docencia__modulo__ciclo")
+    nombre_modulo = fields.Field(
+        column_name="Modulo", attribute="docencia__modulo__nombre"
+    )
+    grupo = fields.Field(column_name="Grupo", attribute="docencia__grupo__nombre")
+    temario_alcanzado = fields.Field(column_name="Temario Alcanzado")
+    cumple_programacion = fields.Field(column_name="Cumple Programación")
 
     class Meta:
         model = Seguimiento
         fields = [
-            "docencia__profesor__nombre",
-            "docencia__grupo",
-            "temario_alcanzado__numero_tema",
-            "temario_alcanzado__titulo",
-            "ultimo_contenido_impartido",
-            "mes",
-            "estado",
-            "justificacion_estado",
-            "cumple_programacion",
-            "justificacion_cumple_programacion",
-        ]
-        export_order = [
-            "docencia__profesor__nombre",
+            "profesor",
             "ciclo",
             "nombre_modulo",
-            "docencia__grupo",
-            "temario_alcanzado__numero_tema",
-            "temario_alcanzado__titulo",
+            "grupo",
+            "mes",
+            "temario_alcanzado",
+            "temario_alcanzado",
             "ultimo_contenido_impartido",
-            "mes_texto",
             "estado",
             "justificacion_estado",
             "cumple_programacion",
             "justificacion_cumple_programacion",
         ]
 
-    def dehydrate_mes_texto(self, obj):
+    def dehydrate_mes(self, obj):
         return calendar.month_name[obj.mes].capitalize()
+
+    def dehydrate_temario_alcanzado(self, obj):
+        return f"{obj.temario_alcanzado}"
+
+    def dehydrate_cumple_programacion(self, obj):
+        return "Sí" if obj.cumple_programacion else "No"
 
 
 @admin.register(Seguimiento)
