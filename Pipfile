@@ -12,6 +12,7 @@ djangorestframework = "*"
 djoser = "*"
 django-import-export = {extras = ["xlsx"], version = "*"}
 django-autocomplete-light = "*"
+django-extensions = "*"
 
 [dev-packages]
 ruff = "*"

@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -205,7 +204,12 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("numero_tema", models.IntegerField()),
+                (
+                    "numero_tema",
+                    models.IntegerField(
+                        validators=[django.core.validators.MinValueValidator(1)]
+                    ),
+                ),
                 ("titulo", models.CharField(max_length=255)),
                 ("impartido", models.BooleanField(default=False)),
                 (

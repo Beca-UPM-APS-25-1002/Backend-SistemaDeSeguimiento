@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "djoser",
     "seguimientos.apps.SeguimientosConfig",
     "import_export",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [

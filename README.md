@@ -7,6 +7,8 @@
       - [Registro en la app - POST `/auth/users/`](#registro-en-la-app---post-authusers)
       - [Login - POST `/auth/token/login/`](#login---post-authtokenlogin)
       - [Login - POST `/auth/token/logout/`](#login---post-authtokenlogout)
+    - [Seguimientos](#seguimientos)
+      - [List Seguimientos `/seguimientos/`](#list-seguimientos-seguimientos)
     - [WIP](#wip)
 
 Backend de la aplicación de seguimiento
@@ -63,6 +65,10 @@ Necesita autenticación
 ```
 
 Se invalida el token
+
+### Seguimientos
+
+#### List Seguimientos `/seguimientos/`
 
 ### WIP
 

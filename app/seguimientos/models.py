@@ -42,7 +42,7 @@ class Modulo(models.Model):
 
 
 class UnidadDeTemario(models.Model):
-    numero_tema = models.IntegerField(null=False)
+    numero_tema = models.IntegerField(null=False, validators=[MinValueValidator(1)])
     titulo = models.CharField(max_length=255, null=False)
     impartido = models.BooleanField(default=False)
     modulo = models.ForeignKey(

@@ -80,10 +80,18 @@ class SeguimientosFaltantesViewTestCase(TestCase):
             ciclo=self.ciclo,
         )
         self.profesor1 = Profesor.objects.create_user(
-            email="profesor1@example.com", nombre="Profesor 1", password="testpass"
+            email="profesor1@example.com",
+            nombre="Profesor 1",
+            password="testpass",
         )
         self.profesor2 = Profesor.objects.create_user(
             email="profesor2@example.com", nombre="Profesor 2", password="testpass"
+        )
+        self.admin = Profesor.objects.create_user(
+            email="admin@example.com",
+            nombre="admin",
+            password="testpass",
+            is_admin=True,
         )
         self.docencia1 = Docencia.objects.create(
             profesor=self.profesor1, grupo=self.grupo, modulo=self.modulo
@@ -98,6 +106,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
 
     def test_seguimientos_faltantes_inicial(self):
         # Verificar que inicialmente no existen seguimientos
+        self.client.force_authenticate(user=self.admin)
         response = self.client.get(
             reverse(
                 "seguimientos-faltantes",
@@ -118,6 +127,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
             mes=self.mes,
             docencia=self.docencia1,
         )
+        self.client.force_authenticate(user=self.profesor1)
 
         response = self.client.get(
             reverse(
@@ -144,7 +154,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
             mes=self.mes,
             docencia=self.docencia2,
         )
-
+        self.client.force_authenticate(user=self.profesor1)
         # Verificar que ninguna docencia está pendiente de seguimiento
         response = self.client.get(
             reverse(
@@ -166,7 +176,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
         docencia3 = Docencia.objects.create(
             profesor=self.profesor1, grupo=self.grupo, modulo=modulo2
         )
-
+        self.client.force_authenticate(user=self.admin)
         # Verificar que la nueva docencia también está sin seguimiento
         response = self.client.get(
             reverse(
@@ -199,3 +209,269 @@ class SeguimientosFaltantesViewTestCase(TestCase):
         self.assertEqual(
             len(response.data), 2
         )  # Solo las dos docencias originales deben estar sin seguimiento
+
+
+class SeguimientoViewSetTests(APITestCase):
+    """
+    Suite de pruebas para el SeguimientoViewSet.
+    Verifica que los profesores solo pueden acceder a seguimientos
+    donde tienen una docencia con el mismo grupo y módulo.
+    """
+
+    def setUp(self):
+        """Configuración inicial de datos para las pruebas"""
+        # Crear ciclos
+        self.ciclo1 = Ciclo.objects.create(nombre="DAW")
+        self.ciclo2 = Ciclo.objects.create(nombre="DAM")
+
+        # Crear grupos
+        self.grupo1 = Grupo.objects.create(nombre="Grupo A", ciclo=self.ciclo1, curso=1)
+        self.grupo2 = Grupo.objects.create(nombre="Grupo B", ciclo=self.ciclo2, curso=1)
+
+        # Crear módulos
+        self.modulo1 = Modulo.objects.create(
+            nombre="Programación", curso=1, año_academico="2024-2025", ciclo=self.ciclo1
+        )
+        self.modulo2 = Modulo.objects.create(
+            nombre="Bases de Datos",
+            curso=1,
+            año_academico="2024-2025",
+            ciclo=self.ciclo1,
+        )
+
+        # Crear unidades de temario
+        self.unidad1 = UnidadDeTemario.objects.create(
+            numero_tema=1, titulo="Introducción", modulo=self.modulo1
+        )
+        self.unidad2 = UnidadDeTemario.objects.create(
+            numero_tema=1, titulo="Introducción", modulo=self.modulo2
+        )
+
+        # Crear profesores
+        self.profesor1 = Profesor.objects.create_user(
+            email="profesor1@test.com", nombre="Profesor Uno", password="password123"
+        )
+        self.profesor2 = Profesor.objects.create_user(
+            email="profesor2@test.com", nombre="Profesor Dos", password="password123"
+        )
+
+        # Crear docencias
+        # Profesor 1 tiene docencia en Grupo A, Módulo Programación
+        self.docencia1 = Docencia.objects.create(
+            profesor=self.profesor1, grupo=self.grupo1, modulo=self.modulo1
+        )
+
+        # Profesor 2 tiene docencia en Grupo A, Módulo Bases de Datos
+        self.docencia2 = Docencia.objects.create(
+            profesor=self.profesor2, grupo=self.grupo1, modulo=self.modulo2
+        )
+
+        # Profesor 2 también tiene docencia en Grupo B, Módulo Programación
+        self.docencia3 = Docencia.objects.create(
+            profesor=self.profesor2, grupo=self.grupo2, modulo=self.modulo1
+        )
+
+        # Crear seguimientos
+        self.seguimiento1 = Seguimiento.objects.create(
+            temario_alcanzado=self.unidad1,
+            ultimo_contenido_impartido="Variables y tipos de datos",
+            estado="AL_DIA",
+            mes=1,
+            docencia=self.docencia1,
+        )
+
+        self.seguimiento2 = Seguimiento.objects.create(
+            temario_alcanzado=self.unidad2,
+            ultimo_contenido_impartido="Modelo relacional",
+            estado="AL_DIA",
+            mes=1,
+            docencia=self.docencia2,
+        )
+
+        self.seguimiento3 = Seguimiento.objects.create(
+            temario_alcanzado=self.unidad1,
+            ultimo_contenido_impartido="Estructuras de control",
+            estado="ADELANTADO",
+            mes=2,
+            docencia=self.docencia3,
+        )
+
+        # Preparar el cliente API
+        self.client = APIClient()
+
+        # URL para la API de seguimientos
+        self.url_list = reverse("seguimiento-list")
+
+    def test_unauthenticated_access(self):
+        """Prueba que los usuarios no autenticados no pueden acceder a los seguimientos"""
+        response = self.client.get(self.url_list)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_profesor1_access(self):
+        """
+        Prueba que el profesor1 solo puede ver los seguimientos relacionados con
+        sus docencias (grupo A, módulo programación)
+        """
+        self.client.force_authenticate(user=self.profesor1)
+        response = self.client.get(self.url_list)
+
+        # Verificar código de estado
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verificar que solo obtiene 1 seguimiento (el suyo)
+        self.assertEqual(len(response.data), 1)
+
+        # Verificar que es el seguimiento correcto
+        self.assertEqual(response.data[0]["id"], self.seguimiento1.id)
+
+    def test_profesor2_access(self):
+        """
+        Prueba que el profesor2 solo puede ver los seguimientos relacionados con
+        sus docencias (grupo A, módulo bases de datos y grupo B, módulo programación)
+        """
+        self.client.force_authenticate(user=self.profesor2)
+        response = self.client.get(self.url_list)
+
+        # Verificar código de estado
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verificar que obtiene 2 seguimientos
+        self.assertEqual(len(response.data), 2)
+
+        # Verificar que son los seguimientos correctos
+        seguimiento_ids = [item["id"] for item in response.data]
+        self.assertIn(self.seguimiento2.id, seguimiento_ids)
+        self.assertIn(self.seguimiento3.id, seguimiento_ids)
+        self.assertNotIn(self.seguimiento1.id, seguimiento_ids)
+
+    def test_profesor1_create_for_own_docencia(self):
+        """
+        Prueba que el profesor1 puede crear un seguimiento para su propia docencia
+        """
+        self.client.force_authenticate(user=self.profesor1)
+        data = {
+            "temario_alcanzado": self.unidad1.id,
+            "ultimo_contenido_impartido": "Funciones y métodos",
+            "estado": "AL_DIA",
+            "mes": 3,
+            "docencia": self.docencia1.id,
+        }
+
+        response = self.client.post(self.url_list, data, format="json")
+
+        # Verificar que se crea correctamente
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_profesor1_cannot_create_for_other_docencia(self):
+        """
+        Prueba que el profesor1 no puede crear un seguimiento para la docencia de otro profesor
+        """
+        self.client.force_authenticate(user=self.profesor1)
+        data = {
+            "temario_alcanzado": self.unidad2.id,
+            "ultimo_contenido_impartido": "Consultas SQL",
+            "estado": "AL_DIA",
+            "mes": 3,
+            "docencia": self.docencia2.id,  # Docencia del profesor2
+        }
+
+        response = self.client.post(self.url_list, data, format="json")
+
+        # Verificar que no se permite la creación
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_profesor1_can_update_own_seguimiento(self):
+        """
+        Prueba que el profesor1 puede actualizar un seguimiento relacionado con su docencia
+        """
+        self.client.force_authenticate(user=self.profesor1)
+        url_detail = reverse("seguimiento-detail", args=[self.seguimiento1.id])
+        data = {
+            "temario_alcanzado": self.unidad1.id,
+            "ultimo_contenido_impartido": "Contenido actualizado",
+            "estado": "ADELANTADO",
+            "mes": 1,
+            "docencia": self.docencia1.id,
+        }
+
+        response = self.client.put(url_detail, data, format="json")
+
+        # Verificar que se actualiza correctamente
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["ultimo_contenido_impartido"], "Contenido actualizado"
+        )
+
+    def test_profesor1_cannot_update_other_seguimiento(self):
+        """
+        Prueba que el profesor1 no puede actualizar un seguimiento relacionado con la docencia de otro profesor
+        """
+        self.client.force_authenticate(user=self.profesor1)
+        url_detail = reverse("seguimiento-detail", args=[self.seguimiento2.id])
+        data = {
+            "temario_alcanzado": self.unidad2.id,
+            "ultimo_contenido_impartido": "Intento de modificación",
+            "estado": "ATRASADO",
+            "mes": 1,
+            "docencia": self.docencia2.id,
+        }
+
+        response = self.client.put(url_detail, data, format="json")
+
+        # Verificar que no se permite la actualización
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_profesor1_can_delete_own_seguimiento(self):
+        """
+        Prueba que el profesor1 puede eliminar un seguimiento relacionado con su docencia
+        """
+        self.client.force_authenticate(user=self.profesor1)
+        url_detail = reverse("seguimiento-detail", args=[self.seguimiento1.id])
+
+        response = self.client.delete(url_detail)
+
+        # Verificar que se elimina correctamente
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Verificar que ya no existe el seguimiento
+        self.assertFalse(Seguimiento.objects.filter(id=self.seguimiento1.id).exists())
+
+    def test_profesor1_cannot_delete_other_seguimiento(self):
+        """
+        Prueba que el profesor1 no puede eliminar un seguimiento relacionado con la docencia de otro profesor
+        """
+        self.client.force_authenticate(user=self.profesor1)
+        url_detail = reverse("seguimiento-detail", args=[self.seguimiento2.id])
+
+        response = self.client.delete(url_detail)
+
+        # Verificar que no se permite la eliminación
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        # Verificar que el seguimiento sigue existiendo
+        self.assertTrue(Seguimiento.objects.filter(id=self.seguimiento2.id).exists())
+
+    def test_profesor_with_same_grupo_modulo_can_access(self):
+        """
+        Prueba que un profesor con docencia del mismo grupo y módulo puede acceder
+        a seguimientos aunque no sea el profesor asignado a esa docencia específica
+        """
+        # Crear un nuevo profesor
+        profesor3 = Profesor.objects.create_user(
+            email="profesor3@test.com", nombre="Profesor Tres", password="password123"
+        )
+
+        # Crear una docencia para profesor3 con el mismo grupo y módulo que docencia1
+        docencia4 = Docencia.objects.create(
+            profesor=profesor3, grupo=self.grupo1, modulo=self.modulo1
+        )
+
+        # Autenticar como profesor3
+        self.client.force_authenticate(user=profesor3)
+
+        # Intentar acceder al seguimiento1 (del profesor1)
+        url_detail = reverse("seguimiento-detail", args=[self.seguimiento1.id])
+        response = self.client.get(url_detail)
+
+        # Verificar que se permite el acceso
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -1,5 +1,9 @@
 from django.test import TestCase
+from rest_framework.test import APIClient
+
 from rest_framework.exceptions import ValidationError
+from django.urls import reverse
+
 from seguimientos.models import (
     Ciclo,
     Grupo,
@@ -15,6 +19,7 @@ from seguimientos.serializers import SeguimientoSerializer
 class SeguimientoSerializerTests(TestCase):
     def setUp(self):
         # Crear datos de prueba
+        self.client = APIClient()
         self.ciclo = Ciclo.objects.create(nombre="Desarrollo de Aplicaciones Web")
         self.grupo = Grupo.objects.create(nombre="DAW1A", ciclo=self.ciclo, curso=1)
         self.modulo1 = Modulo.objects.create(
@@ -51,9 +56,7 @@ class SeguimientoSerializerTests(TestCase):
         )
 
     def test_validate_temario_pertenece_al_modulo_de_docencia(self):
-        """
-        Verifica que el temario_alcanzado pertenezca al mismo módulo que la docencia.
-        """
+        url = reverse("seguimiento-list")
         data = {
             "temario_alcanzado": self.temario1.pk,
             "docencia": self.docencia.pk,
@@ -61,34 +64,25 @@ class SeguimientoSerializerTests(TestCase):
             "ultimo_contenido_impartido": "Clases y objetos",
             "estado": "AL_DIA",
         }
-        serializer = SeguimientoSerializer(data=data)
-        self.assertTrue(serializer.is_valid())
+        self.client.force_authenticate(user=self.profesor)
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, 201)
 
     def test_validate_temario_no_pertenece_al_modulo_de_docencia(self):
-        """
-        Verifica que se lance una excepción si el temario_alcanzado no pertenece al módulo de la docencia.
-        """
+        url = reverse("seguimiento-list")
         data = {
-            "temario_alcanzado": self.temario2.pk,  # Temario de otro módulo
+            "temario_alcanzado": self.temario2.pk,
             "docencia": self.docencia.pk,
             "mes": 10,
             "ultimo_contenido_impartido": "Clases y objetos",
             "estado": "AL_DIA",
         }
-        serializer = SeguimientoSerializer(data=data)
-        with self.assertRaises(ValidationError) as context:
-            serializer.is_valid(raise_exception=True)
-        self.assertIn("temario_alcanzado", context.exception.detail)
-        self.assertEqual(
-            context.exception.detail["temario_alcanzado"][0],
-            "El temario alcanzado debe pertenecer al módulo de la docencia.",
-        )
+        self.client.force_authenticate(user=self.profesor)
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("temario_alcanzado", response.json())
 
     def test_validate_no_duplicado_mes_grupo_modulo(self):
-        """
-        Verifica que no se pueda crear un Seguimiento duplicado para la misma combinación de mes, grupo y módulo.
-        """
-        # Crear un Seguimiento existente
         Seguimiento.objects.create(
             temario_alcanzado=self.temario1,
             docencia=self.docencia,
@@ -96,34 +90,91 @@ class SeguimientoSerializerTests(TestCase):
             ultimo_contenido_impartido="Clases y objetos",
             estado="AL_DIA",
         )
-
-        # Intentar crear un Seguimiento duplicado
+        url = reverse("seguimiento-list")
         data = {
             "temario_alcanzado": self.temario1.pk,
             "docencia": self.docencia2.pk,
-            "mes": 10,  # Mismo mes, grupo y módulo
+            "mes": 10,
             "ultimo_contenido_impartido": "Herencia",
             "estado": "ATRASADO",
         }
-        serializer = SeguimientoSerializer(data=data)
-        with self.assertRaises(ValidationError) as context:
-            serializer.is_valid(raise_exception=True)
-        self.assertIn("docencia", context.exception.detail)
-        self.assertEqual(
-            context.exception.detail["docencia"][0],
-            "Ya existe un seguimiento para este mes, grupo y módulo.",
-        )
+        self.client.force_authenticate(user=self.profesor2)
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("docencia", response.json())
 
     def test_validate_seguimiento_valido(self):
-        """
-        Verifica que un Seguimiento con datos válidos sea aceptado.
-        """
+        url = reverse("seguimiento-list")
         data = {
             "temario_alcanzado": self.temario1.pk,
             "docencia": self.docencia.pk,
-            "mes": 11,  # Mes diferente
+            "mes": 11,
             "ultimo_contenido_impartido": "Polimorfismo",
             "estado": "ADELANTADO",
         }
-        serializer = SeguimientoSerializer(data=data)
-        self.assertTrue(serializer.is_valid())
+        self.client.force_authenticate(user=self.profesor)
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, 201)
+
+    def test_validate_post_creacion_correcta(self):
+        """
+        Verifica que se puede crear un Seguimiento válido con una solicitud POST.
+        """
+        url = reverse("seguimiento-list")
+        data = {
+            "temario_alcanzado": self.temario1.pk,
+            "docencia": self.docencia.pk,
+            "mes": 9,
+            "ultimo_contenido_impartido": "Estructuras de control",
+            "estado": "AL_DIA",
+        }
+        self.client.force_authenticate(user=self.profesor)
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, 201)
+
+    def test_validate_post_duplicado(self):
+        """
+        Verifica que no se pueda crear un Seguimiento duplicado en un POST.
+        """
+        Seguimiento.objects.create(
+            temario_alcanzado=self.temario1,
+            docencia=self.docencia,
+            mes=9,
+            ultimo_contenido_impartido="Estructuras de control",
+            estado="AL_DIA",
+        )
+        url = reverse("seguimiento-list")
+        data = {
+            "temario_alcanzado": self.temario1.pk,
+            "docencia": self.docencia.pk,
+            "mes": 9,
+            "ultimo_contenido_impartido": "Herencia",
+            "estado": "ATRASADO",
+        }
+        self.client.force_authenticate(user=self.profesor)
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_validate_put_cambio_mes_docencia(self):
+        """
+        Verifica que no se pueda cambiar el mes o la docencia en un PUT.
+        """
+        seguimiento = Seguimiento.objects.create(
+            temario_alcanzado=self.temario1,
+            docencia=self.docencia,
+            mes=9,
+            ultimo_contenido_impartido="Estructuras de control",
+            estado="AL_DIA",
+        )
+        url = reverse("seguimiento-detail", args=[seguimiento.pk])
+        data = {
+            "temario_alcanzado": self.temario1.pk,
+            "docencia": self.docencia.pk,
+            "mes": 10,  # Intento de cambiar el mes
+            "ultimo_contenido_impartido": "Herencia",
+            "estado": "ATRASADO",
+        }
+        self.client.force_authenticate(user=self.profesor)
+        response = self.client.put(url, data, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("docencia", response.json())

@@ -1,7 +1,11 @@
 from .models import Seguimiento, Modulo, UnidadDeTemario, Docencia
 from rest_framework import status, viewsets, generics
+from django.db.models import Q
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from .permissions import TieneDocenciaConMismoGrupoModulo
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import (
     SeguimientoSerializer,
     ModuloSerializer,
@@ -11,8 +15,49 @@ from .serializers import (
 
 
 class SeguimientoViewSet(viewsets.ModelViewSet):
-    queryset = Seguimiento.objects.all()
+    """
+    ViewSet para el modelo Seguimiento.
+    Restringe el acceso a seguimientos donde el profesor autenticado tiene
+    una docencia con el mismo grupo y módulo.
+    """
+
     serializer_class = SeguimientoSerializer
+    permission_classes = [IsAuthenticated & TieneDocenciaConMismoGrupoModulo]
+
+    def get_queryset(self):
+        """
+        Filtra el queryset para incluir solo los seguimientos donde el profesor
+        tiene una docencia con el mismo grupo y módulo.
+        """
+
+        if not self.request.user.is_authenticated:
+            return Seguimiento.objects.none()
+        # Obtiene todas las docencias del profesor actual
+        docencias_profesor = Docencia.objects.filter(profesor=self.request.user)
+
+        # Crea un objeto Q para construir una consulta OR para cada par (grupo, módulo)
+        consulta = Q()
+        for docencia in docencias_profesor:
+            # Añade condición para este par específico (grupo, módulo)
+            consulta |= Q(
+                docencia__grupo=docencia.grupo, docencia__modulo=docencia.modulo
+            )
+
+        # Si el profesor no tiene docencias, devuelve un queryset vacío
+        if not docencias_profesor.exists():
+            return Seguimiento.objects.none()
+
+        # Devuelve los seguimientos que coinciden con cualquiera de los pares (grupo, módulo) del profesor
+        seguimientos = Seguimiento.objects.filter(consulta)
+
+        # Filtra los seguimientos por parametros pasados en la URL
+        year = self.request.query_params.get("year")
+        mes = self.request.query_params.get("mes")
+        if year:
+            seguimientos = seguimientos.filter(docencia__modulo__año_academico=year)
+        if mes:
+            seguimientos = seguimientos.filter(mes=mes)
+        return seguimientos
 
 
 class ModuloViewSet(viewsets.ReadOnlyModelViewSet):
@@ -41,12 +86,14 @@ class SeguimientosFaltantesView(generics.ListAPIView):
     han completado el seguimiento.
     """
 
+    permission_classes = [IsAuthenticated]
+
     serializer_class = DocenciaSerializer
 
     def get_queryset(self):
         año_academico = self.kwargs["año_academico"]
         mes = self.kwargs["mes"]
-
+        user = self.request.user
         # Paso 1: Filtrar las instancias de Docencia por año académico
         docencias = Docencia.objects.filter(modulo__año_academico=año_academico)
 
@@ -64,5 +111,6 @@ class SeguimientosFaltantesView(generics.ListAPIView):
             docencias_sin_seguimiento = docencias_sin_seguimiento.exclude(
                 grupo=seguimiento.docencia.grupo, modulo=seguimiento.docencia.modulo
             )
-
-        return docencias_sin_seguimiento
+        if user.is_admin:
+            return docencias_sin_seguimiento
+        return docencias_sin_seguimiento.filter(profesor=user)
