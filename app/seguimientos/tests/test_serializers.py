@@ -16,7 +16,7 @@ class SeguimientoSerializerTests(TestCase):
     def setUp(self):
         # Crear datos de prueba
         self.ciclo = Ciclo.objects.create(nombre="Desarrollo de Aplicaciones Web")
-        self.grupo = Grupo.objects.create(nombre="DAW1A", ciclo=self.ciclo)
+        self.grupo = Grupo.objects.create(nombre="DAW1A", ciclo=self.ciclo, curso=1)
         self.modulo1 = Modulo.objects.create(
             nombre="Programación",
             curso=1,

@@ -38,8 +38,8 @@ class DocenciaInline(admin.TabularInline):
         # Filter grupos based on modulo's ciclo
         if db_field.name == "grupo" and hasattr(self, "parent_obj") and self.parent_obj:
             kwargs["queryset"] = Grupo.objects.filter(
-                ciclo=self.parent_obj.ciclo
-            ).filter(nombre__contains=str(self.parent_obj.curso))
+                ciclo=self.parent_obj.ciclo, curso=self.parent_obj.curso
+            )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_formset(self, request, obj=None, **kwargs):
@@ -74,8 +74,8 @@ class UnidadDeTemarioInline(admin.TabularInline):
 
 @admin.register(Grupo)
 class GrupoAdmin(admin.ModelAdmin):
-    list_display = ["nombre", "ciclo"]
-    list_filter = ["ciclo"]
+    list_display = ["nombre", "ciclo", "curso"]
+    list_filter = ["ciclo", "curso"]
     search_fields = ["nombre", "ciclo__nombre"]
 
 
@@ -215,7 +215,7 @@ class ProfesorForm(ModelForm):
 class ProfesorAdmin(admin.ModelAdmin):
     form = ProfesorForm  # Usa el formulario personalizado
     list_display = ["nombre", "email", "activo", "es_admin"]
-    list_filter = ["activo", "is_staff", "is_admin"]
+    list_filter = ["activo", "is_admin"]
     search_fields = ["nombre", "email"]
 
     fieldsets = (
@@ -247,6 +247,12 @@ class DocenciaAdmin(admin.ModelAdmin):
 
     get_año_academico.short_description = "Año Académico"
     get_año_academico.admin_order_field = "modulo__año_academico"
+
+    def get_model_perms(self, request):
+        """
+        Return empty perms dict thus hiding the model from admin index.
+        """
+        return {}
 
 
 class SeguimientoResource(resources.ModelResource):

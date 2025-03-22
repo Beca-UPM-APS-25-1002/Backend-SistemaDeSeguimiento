@@ -17,6 +17,7 @@ class Grupo(models.Model):
     ciclo = models.ForeignKey(
         Ciclo, on_delete=models.RESTRICT, to_field="nombre", related_name="grupos"
     )
+    curso = models.IntegerField(null=False, validators=[MinValueValidator(1)])
 
     def __str__(self):
         return f"{self.nombre} - {self.ciclo}"
@@ -24,7 +25,7 @@ class Grupo(models.Model):
 
 class Modulo(models.Model):
     nombre = models.CharField(null=False, max_length=255)
-    curso = models.IntegerField(null=False)
+    curso = models.IntegerField(null=False, validators=[MinValueValidator(1)])
     año_academico = models.CharField(null=False, max_length=10, db_index=True)
     ciclo = models.ForeignKey(
         Ciclo, on_delete=models.RESTRICT, to_field="nombre", related_name="modulos"

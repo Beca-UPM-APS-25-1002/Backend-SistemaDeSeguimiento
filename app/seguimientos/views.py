@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from .models import Seguimiento, Modulo, UnidadDeTemario, Docencia
 from rest_framework import status, viewsets, generics
 from rest_framework.decorators import action

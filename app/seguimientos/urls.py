@@ -10,5 +10,6 @@ urlpatterns = [
     path(
         "seguimientos-faltantes/<slug:año_academico>/<int:mes>/",
         views.SeguimientosFaltantesView.as_view(),
+        name="seguimientos-faltantes",
     ),
 ]

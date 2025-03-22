@@ -32,7 +32,7 @@ class SeguimientoModelTestCase(TestCase):
         self.profesor = Profesor.objects.create(
             email="profesor@test.com", nombre="Juan Pérez", password="segura123"
         )
-        self.grupo = Grupo.objects.create(nombre="1A", ciclo=self.ciclo)
+        self.grupo = Grupo.objects.create(nombre="1A", ciclo=self.ciclo, curso=1)
         self.docencia = Docencia.objects.create(
             profesor=self.profesor, grupo=self.grupo, modulo=self.modulo
         )
