@@ -16,6 +16,7 @@ django-extensions = "*"
 
 [dev-packages]
 ruff = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.13"

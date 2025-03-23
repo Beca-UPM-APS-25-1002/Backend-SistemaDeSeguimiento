@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.functional import cached_property
+from django.core.cache import cache
 
 
 class Ciclo(models.Model):
@@ -36,6 +37,11 @@ class Modulo(models.Model):
             models.Index(fields=["año_academico"]),
             models.Index(fields=["ciclo"]),
         ]
+
+    def save(self, *args, **kwargs):
+        """Invalidamos el cache de años si se ha registrado un nuevo modulo"""
+        cache.delete("año_academico_actual")
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.nombre} - {self.ciclo} - {self.año_academico}"

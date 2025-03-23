@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Seguimiento, Profesor, Modulo, Docencia, UnidadDeTemario, Grupo
+import re
 
 
 class UnidadDeTemarioSerializer(serializers.ModelSerializer):
@@ -23,7 +24,7 @@ class GrupoSerializer(serializers.ModelSerializer):
 class ProfesorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profesor
-        fields = ["id", "nombre", "email"]
+        fields = ["id", "nombre", "email", "activo"]
 
 
 class DocenciaSerializer(serializers.ModelSerializer):
@@ -86,3 +87,30 @@ class SeguimientoSerializer(serializers.ModelSerializer):
                     }
                 )
             return data
+
+
+class RecordatorioSerializer(serializers.Serializer):
+    docencia_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=True,
+        help_text="Lista de IDs de docencias para las que se enviará el recordatorio",
+    )
+    mes = serializers.IntegerField(
+        min_value=1,
+        max_value=12,
+        required=True,
+        help_text="Mes para el que falta el seguimiento (1-12)",
+    )
+    año_academico = serializers.CharField(
+        required=True, help_text="Año académico del seguimiento (ej: '2024-2025')"
+    )
+
+    def validate_año_academico(self, value):
+        return bool(re.search(r"^\d{4}-\d{2}$", value))
+
+    def validate_docencia_ids(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                "Debe proporcionar al menos un ID de docencia"
+            )
+        return value

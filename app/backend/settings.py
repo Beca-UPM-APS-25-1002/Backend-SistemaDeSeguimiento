@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure-=1seo&72qbf8$p6z2t&7m2%_mvnbslm$)g#wy4ix@bbruuwmug
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
+FRONTEND_URL = "http://localhost:8080"
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_ROOT = os.path.join(PROJECT_DIR, "static")
 

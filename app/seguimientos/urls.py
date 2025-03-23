@@ -12,4 +12,5 @@ urlpatterns = [
         views.SeguimientosFaltantesView.as_view(),
         name="seguimientos-faltantes",
     ),
+    path("current-year/", views.CurrentAcademicYearView.as_view(), name="current-year"),
 ]

@@ -17,6 +17,7 @@ from seguimientos.models import (
 class ModuloViewSetTestCase(APITestCase):
     def setUp(self):
         """Configura los datos iniciales para probar la acción 'temario'"""
+        self.client = APIClient()
         self.ciclo = Ciclo.objects.create(nombre="Informática")
 
         # Módulo con temario
@@ -41,6 +42,12 @@ class ModuloViewSetTestCase(APITestCase):
             "modulo-temario", args=[self.modulo_sin_temario.id]
         )
         self.temario_url_no_existente = reverse("modulo-temario", args=[9999])
+        self.profesor1 = Profesor.objects.create_user(
+            email="profesor1@example.com",
+            nombre="Profesor 1",
+            password="testpass",
+        )
+        self.client.force_authenticate(user=self.profesor1)
 
     def test_obtener_temario_exitosamente(self):
         """Verifica que 'temario' devuelve las unidades de temario correctamente"""
@@ -112,6 +119,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
                 "seguimientos-faltantes",
                 kwargs={"año_academico": self.año_academico, "mes": self.mes},
             )
+            + "?all"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
@@ -183,6 +191,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
                 "seguimientos-faltantes",
                 kwargs={"año_academico": self.año_academico, "mes": self.mes},
             )
+            + "?all"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
@@ -204,6 +213,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
                 "seguimientos-faltantes",
                 kwargs={"año_academico": self.año_academico, "mes": self.mes},
             )
+            + "?all"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
