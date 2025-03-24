@@ -2,7 +2,7 @@ from django.core.cache import cache
 from .models import Modulo
 
 
-def obtener_año_academico_actual():
+def get_año_academico_actual():
     """
     Devuelve el año académico del módulo más reciente (con el ID más alto)
     con caché para minimizar las consultas a la base de datos.

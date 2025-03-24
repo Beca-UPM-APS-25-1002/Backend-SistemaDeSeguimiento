@@ -239,7 +239,12 @@ admin.site.register(Profesor, ProfesorAdmin)
 class DocenciaAdmin(admin.ModelAdmin):
     list_display = ["profesor", "modulo", "grupo", "get_año_academico"]
     list_filter = ["modulo__año_academico", "grupo"]
-    search_fields = ["profesor__nombre", "modulo__nombre", "grupo__nombre"]
+    search_fields = [
+        "profesor__nombre",
+        "modulo__nombre",
+        "modulo__año_academico",
+        "grupo__nombre",
+    ]
     autocomplete_fields = ["profesor", "grupo", "modulo"]
 
     def get_año_academico(self, obj):

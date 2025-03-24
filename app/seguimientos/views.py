@@ -2,7 +2,7 @@ from .models import Seguimiento, Modulo, UnidadDeTemario, Docencia
 from rest_framework import status, viewsets, generics
 from django.db.models import Q
 from rest_framework.views import APIView
-from .utils import obtener_año_academico_actual
+from .utils import get_año_academico_actual
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .permissions import TieneDocenciaConMismoGrupoModulo
@@ -55,7 +55,11 @@ class SeguimientoViewSet(viewsets.ModelViewSet):
         seguimientos = Seguimiento.objects.filter(consulta)
 
         # Filtra los seguimientos por parametros pasados en la URL
-        year = self.request.query_params.get("year")
+        year = (
+            get_año_academico_actual()
+            if not self.request.query_params.get("year")
+            else self.request.query_params.get("year")
+        )
         mes = self.request.query_params.get("mes")
         if year:
             seguimientos = seguimientos.filter(docencia__modulo__año_academico=year)
@@ -79,6 +83,17 @@ class ModuloViewSet(viewsets.ReadOnlyModelViewSet):
             )
         serializer = UnidadDeTemarioSerializer(unidadesDeTemario, many=True)
         return Response(serializer.data)
+
+
+class DocenciaViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = DocenciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Docencia.objects.filter(
+            profesor=self.request.user,
+            modulo__año_academico=get_año_academico_actual(),
+        )
 
 
 class SeguimientosFaltantesView(generics.ListAPIView):
@@ -128,7 +143,7 @@ class CurrentAcademicYearView(APIView):
 
     def get(self, request):
         return Response(
-            {"año_academico_actual": obtener_año_academico_actual()},
+            {"año_academico_actual": get_año_academico_actual()},
             status=status.HTTP_200_OK,
         )
 

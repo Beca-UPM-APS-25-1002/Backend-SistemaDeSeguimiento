@@ -157,7 +157,7 @@ class Docencia(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.profesor.nombre} - {self.modulo.nombre} - {self.grupo.nombre}"
+        return f"{self.profesor.nombre} - {self.modulo.nombre} ({self.modulo.año_academico}) - {self.grupo.nombre}"
 
 
 class EstadoSeguimiento(models.TextChoices):

@@ -49,7 +49,7 @@ class ModuloViewSetTestCase(APITestCase):
         )
         self.client.force_authenticate(user=self.profesor1)
 
-    def test_obtener_temario_exitosamente(self):
+    def test_get_temario_exitosamente(self):
         """Verifica que 'temario' devuelve las unidades de temario correctamente"""
         response = self.client.get(self.temario_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

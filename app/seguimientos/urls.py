@@ -5,6 +5,7 @@ from seguimientos import views
 router = DefaultRouter()
 router.register(r"seguimientos", views.SeguimientoViewSet, basename="seguimiento")
 router.register(r"modulos", views.ModuloViewSet, basename="modulo")
+router.register(r"docencias", views.DocenciaViewSet, basename="docencia")
 urlpatterns = [
     path("", include(router.urls)),
     path(

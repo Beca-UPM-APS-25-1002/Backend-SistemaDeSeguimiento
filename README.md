@@ -6,8 +6,10 @@
     - [Login - POST `/token/logout/`](#login---post-tokenlogout)
   - [API `/api/`](#api-api)
     - [Año Academico Actual `GET` `/current-year/`](#año-academico-actual-get-current-year)
-    - [Módulos `/modulos/`](#módulos-modulos)
+    - [Docencias `/docencias/`](#docencias-docencias)
       - [Listado](#listado)
+    - [Módulos `/modulos/`](#módulos-modulos)
+      - [Listado](#listado-1)
       - [Detalle `/<pk>/`](#detalle-pk)
       - [Detalle Temario `/<pk>/temario/`](#detalle-temario-pktemario)
     - [Seguimientos faltantes `/seguimientos-faltantes/<slug:año_academico>/<int:mes>/`](#seguimientos-faltantes-seguimientos-faltantesslugaño_academicointmes)
@@ -83,6 +85,40 @@ Necesita autenticación en todos los endpoints
 {
   "año_academico_actual": "2025-26"
 }
+```
+
+### Docencias `/docencias/`
+
+Estos endpoints son solo `GET`
+
+#### Listado
+
+Lista de las docencias, muestra solo los del profesor autenticado, en el año actual.
+
+```json
+[
+  {
+    "id": 1,
+    "profesor": {
+      "id": 2,
+      "nombre": "Émilie Jardin",
+      "email": "a@profes.es",
+      "activo": true
+    },
+    "modulo": {
+      "id": 3,
+      "nombre": "Matematicas",
+      "curso": 2,
+      "año_academico": "2025-26",
+      "ciclo": "ESO"
+    },
+    "grupo": {
+      "nombre": "ESOM2",
+      "curso": 2,
+      "ciclo": "ESO"
+    }
+  }
+]
 ```
 
 ### Módulos `/modulos/`
@@ -193,7 +229,7 @@ Puede tener el modificador opcional `?all` para tener todos los seguimientos fal
 
 #### Listado `GET`
 
-Consigue los seguimientos del profesor autenticado. Se puede filtrar con los parametros tal que `?year=2024-25` y `?mes=4`
+Consigue los seguimientos del profesor autenticado. Se puede filtrar con los parametros tal que `?year=2024-25` y `?mes=4`. Filtra por defecto por el año actual
 
 ```json
 [
