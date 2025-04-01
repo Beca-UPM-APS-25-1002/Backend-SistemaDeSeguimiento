@@ -10,7 +10,7 @@ from seguimientos.models import (
     Profesor,
     Docencia,
     Seguimiento,
-    UnidadDeTemario,
+    UnidadDeTrabajo,
 )
 
 
@@ -24,10 +24,10 @@ class ModuloViewSetTestCase(APITestCase):
         self.modulo = Modulo.objects.create(
             nombre="Programación", curso=1, año_academico="2024", ciclo=self.ciclo
         )
-        self.tema1 = UnidadDeTemario.objects.create(
+        self.tema1 = UnidadDeTrabajo.objects.create(
             numero_tema=1, titulo="Variables", modulo=self.modulo
         )
-        self.tema2 = UnidadDeTemario.objects.create(
+        self.tema2 = UnidadDeTrabajo.objects.create(
             numero_tema=2, titulo="Estructuras de Control", modulo=self.modulo
         )
 
@@ -107,7 +107,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
             profesor=self.profesor2, grupo=self.grupo, modulo=self.modulo
         )
 
-        self.unidad = UnidadDeTemario.objects.create(
+        self.unidad = UnidadDeTrabajo.objects.create(
             numero_tema=1, titulo="Introducción", modulo=self.modulo
         )
 
@@ -129,7 +129,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
     def test_seguimientos_faltantes_despues_de_un_seguimiento(self):
         # Crear un seguimiento para un profesor
         Seguimiento.objects.create(
-            temario_alcanzado=self.unidad,
+            temario_actual=self.unidad,
             ultimo_contenido_impartido="Introducción",
             estado="AL_DIA",
             mes=self.mes,
@@ -149,14 +149,14 @@ class SeguimientosFaltantesViewTestCase(TestCase):
     def test_seguimientos_faltantes_despues_de_seguimientos_mismo_grupo(self):
         # Crear seguimientos para ambas docencias en el mismo grupo y módulo
         Seguimiento.objects.create(
-            temario_alcanzado=self.unidad,
+            temario_actual=self.unidad,
             ultimo_contenido_impartido="Introducción",
             estado="AL_DIA",
             mes=self.mes,
             docencia=self.docencia1,
         )
         Seguimiento.objects.create(
-            temario_alcanzado=self.unidad,
+            temario_actual=self.unidad,
             ultimo_contenido_impartido="Introducción",
             estado="AL_DIA",
             mes=self.mes,
@@ -200,7 +200,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
 
         # Crear un seguimiento para la nueva docencia
         Seguimiento.objects.create(
-            temario_alcanzado=self.unidad,
+            temario_actual=self.unidad,
             ultimo_contenido_impartido="Introducción",
             estado="AL_DIA",
             mes=self.mes,
@@ -250,10 +250,10 @@ class SeguimientoViewSetTests(APITestCase):
         )
 
         # Crear unidades de temario
-        self.unidad1 = UnidadDeTemario.objects.create(
+        self.unidad1 = UnidadDeTrabajo.objects.create(
             numero_tema=1, titulo="Introducción", modulo=self.modulo1
         )
-        self.unidad2 = UnidadDeTemario.objects.create(
+        self.unidad2 = UnidadDeTrabajo.objects.create(
             numero_tema=1, titulo="Introducción", modulo=self.modulo2
         )
 
@@ -283,7 +283,7 @@ class SeguimientoViewSetTests(APITestCase):
 
         # Crear seguimientos
         self.seguimiento1 = Seguimiento.objects.create(
-            temario_alcanzado=self.unidad1,
+            temario_actual=self.unidad1,
             ultimo_contenido_impartido="Variables y tipos de datos",
             estado="AL_DIA",
             mes=1,
@@ -291,7 +291,7 @@ class SeguimientoViewSetTests(APITestCase):
         )
 
         self.seguimiento2 = Seguimiento.objects.create(
-            temario_alcanzado=self.unidad2,
+            temario_actual=self.unidad2,
             ultimo_contenido_impartido="Modelo relacional",
             estado="AL_DIA",
             mes=1,
@@ -299,7 +299,7 @@ class SeguimientoViewSetTests(APITestCase):
         )
 
         self.seguimiento3 = Seguimiento.objects.create(
-            temario_alcanzado=self.unidad1,
+            temario_actual=self.unidad1,
             ultimo_contenido_impartido="Estructuras de control",
             estado="ADELANTADO",
             mes=2,
@@ -360,7 +360,7 @@ class SeguimientoViewSetTests(APITestCase):
         """
         self.client.force_authenticate(user=self.profesor1)
         data = {
-            "temario_alcanzado": self.unidad1.id,
+            "temario_actual": self.unidad1.id,
             "ultimo_contenido_impartido": "Funciones y métodos",
             "estado": "AL_DIA",
             "mes": 3,
@@ -378,7 +378,7 @@ class SeguimientoViewSetTests(APITestCase):
         """
         self.client.force_authenticate(user=self.profesor1)
         data = {
-            "temario_alcanzado": self.unidad2.id,
+            "temario_actual": self.unidad2.id,
             "ultimo_contenido_impartido": "Consultas SQL",
             "estado": "AL_DIA",
             "mes": 3,
@@ -397,7 +397,7 @@ class SeguimientoViewSetTests(APITestCase):
         self.client.force_authenticate(user=self.profesor1)
         url_detail = reverse("seguimiento-detail", args=[self.seguimiento1.id])
         data = {
-            "temario_alcanzado": self.unidad1.id,
+            "temario_actual": self.unidad1.id,
             "ultimo_contenido_impartido": "Contenido actualizado",
             "estado": "ADELANTADO",
             "mes": 1,
@@ -419,7 +419,7 @@ class SeguimientoViewSetTests(APITestCase):
         self.client.force_authenticate(user=self.profesor1)
         url_detail = reverse("seguimiento-detail", args=[self.seguimiento2.id])
         data = {
-            "temario_alcanzado": self.unidad2.id,
+            "temario_actual": self.unidad2.id,
             "ultimo_contenido_impartido": "Intento de modificación",
             "estado": "ATRASADO",
             "mes": 1,

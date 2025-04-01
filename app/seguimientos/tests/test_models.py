@@ -3,7 +3,7 @@ from seguimientos.models import (
     Ciclo,
     Grupo,
     Modulo,
-    UnidadDeTemario,
+    UnidadDeTrabajo,
     Profesor,
     Docencia,
     Seguimiento,
@@ -18,13 +18,13 @@ class SeguimientoModelTestCase(TestCase):
         self.modulo = Modulo.objects.create(
             nombre="Programación", curso=1, año_academico="2024", ciclo=self.ciclo
         )
-        self.tema1 = UnidadDeTemario.objects.create(
+        self.tema1 = UnidadDeTrabajo.objects.create(
             numero_tema=1, titulo="Variables", modulo=self.modulo
         )
-        self.tema2 = UnidadDeTemario.objects.create(
+        self.tema2 = UnidadDeTrabajo.objects.create(
             numero_tema=2, titulo="Estructuras de Control", modulo=self.modulo
         )
-        self.tema3 = UnidadDeTemario.objects.create(
+        self.tema3 = UnidadDeTrabajo.objects.create(
             numero_tema=3, titulo="Funciones", modulo=self.modulo
         )
 
@@ -41,7 +41,7 @@ class SeguimientoModelTestCase(TestCase):
         """Verifica que guardar un seguimiento actualiza los temas impartidos correctamente"""
         # Crear seguimiento con el último tema impartido = tema 2
         seguimiento = Seguimiento.objects.create(
-            temario_alcanzado=self.tema2,
+            temario_actual=self.tema2,
             ultimo_contenido_impartido="Estructuras de Control",
             estado="AL_DIA",
             mes=3,
@@ -62,7 +62,7 @@ class SeguimientoModelTestCase(TestCase):
         """Verifica que al cambiar el tema alcanzado a uno menor, los superiores se desmarcan"""
         # Seguimiento inicial con tema 3
         seguimiento = Seguimiento.objects.create(
-            temario_alcanzado=self.tema3,
+            temario_actual=self.tema3,
             ultimo_contenido_impartido="Funciones",
             estado="AL_DIA",
             mes=3,
@@ -78,7 +78,7 @@ class SeguimientoModelTestCase(TestCase):
         self.assertTrue(self.tema3.impartido)
 
         # Cambiar el seguimiento para que el último tema impartido sea el 1
-        seguimiento.temario_alcanzado = self.tema1
+        seguimiento.temario_actual = self.tema1
         seguimiento.save()
 
         # Recargar datos desde la BD

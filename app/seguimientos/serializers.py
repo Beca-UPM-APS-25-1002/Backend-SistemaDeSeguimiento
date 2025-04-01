@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from .models import Seguimiento, Profesor, Modulo, Docencia, UnidadDeTemario, Grupo
+from .models import Seguimiento, Profesor, Modulo, Docencia, UnidadDeTrabajo, Grupo
 import re
 
 
-class UnidadDeTemarioSerializer(serializers.ModelSerializer):
+class UnidadDeTrabajoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UnidadDeTemario
+        model = UnidadDeTrabajo
         fields = "__all__"
 
 
@@ -50,13 +50,13 @@ class SeguimientoSerializer(serializers.ModelSerializer):
         # Comprobar que el temario sea del modulo de la docencia
 
         docencia = data["docencia"]
-        temario_alcanzado = data["temario_alcanzado"]
+        temario_actual = data["temario_actual"]
         mes = data["mes"]
-        if temario_alcanzado and docencia:
-            if temario_alcanzado.modulo != docencia.modulo:
+        if temario_actual and docencia:
+            if temario_actual.modulo != docencia.modulo:
                 raise serializers.ValidationError(
                     {
-                        "temario_alcanzado": "El temario alcanzado debe pertenecer al módulo de la docencia."
+                        "temario_actual": "El temario alcanzado debe pertenecer al módulo de la docencia."
                     }
                 )
         if "request" not in self.context:

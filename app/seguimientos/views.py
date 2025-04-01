@@ -1,4 +1,4 @@
-from .models import Seguimiento, Modulo, UnidadDeTemario, Docencia
+from .models import Seguimiento, Modulo, UnidadDeTrabajo, Docencia
 from rest_framework import status, viewsets, generics
 from django.db.models import Q
 from rest_framework.views import APIView
@@ -13,7 +13,7 @@ from .serializers import RecordatorioSerializer
 from .serializers import (
     SeguimientoSerializer,
     ModuloSerializer,
-    UnidadDeTemarioSerializer,
+    UnidadDeTrabajoSerializer,
     DocenciaSerializer,
 )
 
@@ -75,13 +75,13 @@ class ModuloViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["get"])
     def temario(self, request, pk):
-        unidadesDeTemario = UnidadDeTemario.objects.filter(modulo=pk)
+        unidadesDeTemario = UnidadDeTrabajo.objects.filter(modulo=pk)
         if not unidadesDeTemario:
             return Response(
                 "No existen unidades de temario para este modulo",
                 status.HTTP_404_NOT_FOUND,
             )
-        serializer = UnidadDeTemarioSerializer(unidadesDeTemario, many=True)
+        serializer = UnidadDeTrabajoSerializer(unidadesDeTemario, many=True)
         return Response(serializer.data)
 
 

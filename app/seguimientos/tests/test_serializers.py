@@ -8,7 +8,7 @@ from seguimientos.models import (
     Ciclo,
     Grupo,
     Modulo,
-    UnidadDeTemario,
+    UnidadDeTrabajo,
     Profesor,
     Docencia,
     Seguimiento,
@@ -46,10 +46,10 @@ class SeguimientoSerializerTests(TestCase):
         self.docencia2 = Docencia.objects.create(
             profesor=self.profesor2, grupo=self.grupo, modulo=self.modulo1
         )
-        self.temario1 = UnidadDeTemario.objects.create(
+        self.temario1 = UnidadDeTrabajo.objects.create(
             numero_tema=1, titulo="Introducción a la Programación", modulo=self.modulo1
         )
-        self.temario2 = UnidadDeTemario.objects.create(
+        self.temario2 = UnidadDeTrabajo.objects.create(
             numero_tema=1,
             titulo="Introducción a las Bases de Datos",
             modulo=self.modulo2,
@@ -58,7 +58,7 @@ class SeguimientoSerializerTests(TestCase):
     def test_validate_temario_pertenece_al_modulo_de_docencia(self):
         url = reverse("seguimiento-list")
         data = {
-            "temario_alcanzado": self.temario1.pk,
+            "temario_actual": self.temario1.pk,
             "docencia": self.docencia.pk,
             "mes": 10,
             "ultimo_contenido_impartido": "Clases y objetos",
@@ -71,7 +71,7 @@ class SeguimientoSerializerTests(TestCase):
     def test_validate_temario_no_pertenece_al_modulo_de_docencia(self):
         url = reverse("seguimiento-list")
         data = {
-            "temario_alcanzado": self.temario2.pk,
+            "temario_actual": self.temario2.pk,
             "docencia": self.docencia.pk,
             "mes": 10,
             "ultimo_contenido_impartido": "Clases y objetos",
@@ -80,11 +80,11 @@ class SeguimientoSerializerTests(TestCase):
         self.client.force_authenticate(user=self.profesor)
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, 400)
-        self.assertIn("temario_alcanzado", response.json())
+        self.assertIn("temario_actual", response.json())
 
     def test_validate_no_duplicado_mes_grupo_modulo(self):
         Seguimiento.objects.create(
-            temario_alcanzado=self.temario1,
+            temario_actual=self.temario1,
             docencia=self.docencia,
             mes=10,
             ultimo_contenido_impartido="Clases y objetos",
@@ -92,7 +92,7 @@ class SeguimientoSerializerTests(TestCase):
         )
         url = reverse("seguimiento-list")
         data = {
-            "temario_alcanzado": self.temario1.pk,
+            "temario_actual": self.temario1.pk,
             "docencia": self.docencia2.pk,
             "mes": 10,
             "ultimo_contenido_impartido": "Herencia",
@@ -106,7 +106,7 @@ class SeguimientoSerializerTests(TestCase):
     def test_validate_seguimiento_valido(self):
         url = reverse("seguimiento-list")
         data = {
-            "temario_alcanzado": self.temario1.pk,
+            "temario_actual": self.temario1.pk,
             "docencia": self.docencia.pk,
             "mes": 11,
             "ultimo_contenido_impartido": "Polimorfismo",
@@ -122,7 +122,7 @@ class SeguimientoSerializerTests(TestCase):
         """
         url = reverse("seguimiento-list")
         data = {
-            "temario_alcanzado": self.temario1.pk,
+            "temario_actual": self.temario1.pk,
             "docencia": self.docencia.pk,
             "mes": 9,
             "ultimo_contenido_impartido": "Estructuras de control",
@@ -137,7 +137,7 @@ class SeguimientoSerializerTests(TestCase):
         Verifica que no se pueda crear un Seguimiento duplicado en un POST.
         """
         Seguimiento.objects.create(
-            temario_alcanzado=self.temario1,
+            temario_actual=self.temario1,
             docencia=self.docencia,
             mes=9,
             ultimo_contenido_impartido="Estructuras de control",
@@ -145,7 +145,7 @@ class SeguimientoSerializerTests(TestCase):
         )
         url = reverse("seguimiento-list")
         data = {
-            "temario_alcanzado": self.temario1.pk,
+            "temario_actual": self.temario1.pk,
             "docencia": self.docencia.pk,
             "mes": 9,
             "ultimo_contenido_impartido": "Herencia",
@@ -160,7 +160,7 @@ class SeguimientoSerializerTests(TestCase):
         Verifica que no se pueda cambiar el mes o la docencia en un PUT.
         """
         seguimiento = Seguimiento.objects.create(
-            temario_alcanzado=self.temario1,
+            temario_actual=self.temario1,
             docencia=self.docencia,
             mes=9,
             ultimo_contenido_impartido="Estructuras de control",
@@ -168,7 +168,7 @@ class SeguimientoSerializerTests(TestCase):
         )
         url = reverse("seguimiento-detail", args=[seguimiento.pk])
         data = {
-            "temario_alcanzado": self.temario1.pk,
+            "temario_actual": self.temario1.pk,
             "docencia": self.docencia.pk,
             "mes": 10,  # Intento de cambiar el mes
             "ultimo_contenido_impartido": "Herencia",

@@ -13,13 +13,14 @@ from import_export import fields, resources
 from import_export.admin import ExportMixin
 
 from .models import (
+    AñoAcademico,
     Ciclo,
     Docencia,
     Grupo,
     Modulo,
     Profesor,
     Seguimiento,
-    UnidadDeTemario,
+    UnidadDeTrabajo,
 )
 
 admin.site.site_header = "Administración de Seguimientos"
@@ -56,20 +57,30 @@ class GrupoInline(admin.TabularInline):
 class ModuloInline(admin.TabularInline):
     model = Modulo
     extra = 1
-    fields = ["nombre", "curso", "año_academico"]
+    fields = ["nombre", "curso"]
+
+
+@admin.register(AñoAcademico)
+class AñoAcademicoAdmin(admin.ModelAdmin):
+    list_display = ["año_academico"]
 
 
 @admin.register(Ciclo)
 class CicloAdmin(admin.ModelAdmin):
-    list_display = ["nombre"]
-    search_fields = ["nombre"]
+    list_display = ["nombre", "año_academico"]
+    search_fields = ["nombre", "año_academico"]
+    list_filter = ["año_academico"]
     inlines = [GrupoInline, ModuloInline]
 
 
-class UnidadDeTemarioInline(admin.TabularInline):
-    model = UnidadDeTemario
+class UnidadDeTrabajoInline(admin.TabularInline):
+    model = UnidadDeTrabajo
     extra = 1
-    fields = ["numero_tema", "titulo", "impartido"]
+    fields = [
+        "numero_tema",
+        "titulo",
+    ]
+    ordering = ("numero_tema",)
 
 
 @admin.register(Grupo)
@@ -87,10 +98,10 @@ class ModuloAdmin(admin.ModelAdmin):
         "año_academico",
         "ciclo",
     ]
-    list_filter = ["año_academico", "curso", "ciclo"]
-    search_fields = ["nombre", "ciclo__nombre", "año_academico"]
+    list_filter = ["ciclo__año_academico", "curso", "ciclo"]
+    search_fields = ["nombre", "ciclo__nombre", "ciclo__año_academico"]
     actions = ["duplicar_modulos"]
-    inlines = [UnidadDeTemarioInline, DocenciaInline]
+    inlines = [UnidadDeTrabajoInline, DocenciaInline]
 
     def get_urls(self):
         urls = super().get_urls()
@@ -142,9 +153,9 @@ class ModuloAdmin(admin.ModelAdmin):
                     ciclo=modulo.ciclo,
                 )
                 # Clonar las Unidades de Temario
-                unidades = UnidadDeTemario.objects.filter(modulo=modulo)
+                unidades = UnidadDeTrabajo.objects.filter(modulo=modulo)
                 for unidad in unidades:
-                    UnidadDeTemario.objects.create(
+                    UnidadDeTrabajo.objects.create(
                         numero_tema=unidad.numero_tema,
                         titulo=unidad.titulo,
                         impartido=False,
@@ -159,16 +170,15 @@ class ModuloAdmin(admin.ModelAdmin):
         return render(request, "admin/duplicar_modulos.html", {"modulos": modulos})
 
 
-@admin.register(UnidadDeTemario)
-class UnidadDeTemarioAdmin(admin.ModelAdmin):
+@admin.register(UnidadDeTrabajo)
+class UnidadDeTrabajoAdmin(admin.ModelAdmin):
     list_display = [
         "numero_tema",
         "titulo",
         "modulo",
-        "impartido",
         "año_academico",
     ]
-    list_filter = ["impartido", "modulo"]
+    list_filter = ["modulo"]
     search_fields = ["titulo", "modulo__nombre"]
 
     def get_model_perms(self, request):
@@ -238,7 +248,7 @@ admin.site.register(Profesor, ProfesorAdmin)
 @admin.register(Docencia)
 class DocenciaAdmin(admin.ModelAdmin):
     list_display = ["profesor", "modulo", "grupo", "get_año_academico"]
-    list_filter = ["modulo__año_academico", "grupo"]
+    list_filter = ["modulo__ciclo__año_academico", "grupo"]
     search_fields = [
         "profesor__nombre",
         "modulo__nombre",
@@ -251,7 +261,7 @@ class DocenciaAdmin(admin.ModelAdmin):
         return obj.año_academico
 
     get_año_academico.short_description = "Año Académico"
-    get_año_academico.admin_order_field = "modulo__año_academico"
+    get_año_academico.admin_order_field = "modulo__ciclo__año_academico"
 
     def get_model_perms(self, request):
         """
@@ -270,7 +280,7 @@ class SeguimientoResource(resources.ModelResource):
         column_name="Modulo", attribute="docencia__modulo__nombre"
     )
     grupo = fields.Field(column_name="Grupo", attribute="docencia__grupo__nombre")
-    temario_alcanzado = fields.Field(column_name="Temario Alcanzado")
+    temario_actual = fields.Field(column_name="Temario Alcanzado")
     cumple_programacion = fields.Field(column_name="Cumple Programación")
 
     class Meta:
@@ -281,8 +291,8 @@ class SeguimientoResource(resources.ModelResource):
             "nombre_modulo",
             "grupo",
             "mes",
-            "temario_alcanzado",
-            "temario_alcanzado",
+            "temario_actual",
+            "temario_actual",
             "ultimo_contenido_impartido",
             "estado",
             "justificacion_estado",
@@ -293,8 +303,8 @@ class SeguimientoResource(resources.ModelResource):
     def dehydrate_mes(self, obj):
         return calendar.month_name[obj.mes].capitalize()
 
-    def dehydrate_temario_alcanzado(self, obj):
-        return f"{obj.temario_alcanzado}"
+    def dehydrate_temario_actual(self, obj):
+        return f"{obj.temario_actual}"
 
     def dehydrate_cumple_programacion(self, obj):
         return "Sí" if obj.cumple_programacion else "No"
@@ -305,7 +315,7 @@ class SeguimientoForm(forms.ModelForm):
         model = Seguimiento
         fields = "__all__"
         widgets = {
-            "temario_alcanzado": autocomplete.ModelSelect2(
+            "temario_actual": autocomplete.ModelSelect2(
                 url="/admin/seguimientos/seguimiento/temario-autocomplete",
                 forward=["docencia"],
             ),
@@ -320,20 +330,20 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         "get_mes",
         "get_estado_colored",
         "cumple_programacion",
-        "ultimo_contenido_impartido",
+        "temario_actual",
     ]
     list_filter = [
         "estado",
         "cumple_programacion",
         "mes",
-        "docencia__modulo__año_academico",
+        "docencia__modulo__ciclo__año_academico",
     ]
     search_fields = [
         "docencia__profesor__nombre",
         "docencia__modulo__nombre",
         "docencia__grupo__nombre",
     ]
-    autocomplete_fields = ["docencia", "temario_alcanzado"]
+    autocomplete_fields = ["docencia", "temario_actual"]
     resource_classes = [SeguimientoResource]
     fieldsets = (
         (
@@ -342,7 +352,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
                 "fields": (
                     "docencia",
                     "mes",
-                    "temario_alcanzado",
+                    "temario_actual",
                     "ultimo_contenido_impartido",
                 )
             },
@@ -386,9 +396,9 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
 
     class TemarioAutocomplete(autocomplete.Select2QuerySetView):
         def get_queryset(self):
-            qs = UnidadDeTemario.objects.all()
+            qs = UnidadDeTrabajo.objects.all().order_by("numero_tema")
 
-            # Get the docencia from the forwar/home/rowiz/Development/APS-2025/Backend-SistemaDeSeguimiento/app/seguimientos/admin.pyded value
+            # Get the docencia from the forwarded value
             docencia = self.forwarded.get("docencia", None)
             if docencia:
                 try:
@@ -396,9 +406,9 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
                     docencia_obj = Docencia.objects.get(pk=docencia)
                     qs = qs.filter(modulo=docencia_obj.modulo)
                 except Docencia.DoesNotExist:
-                    return UnidadDeTemario.objects.none()
+                    return UnidadDeTrabajo.objects.none()
             else:
-                return UnidadDeTemario.objects.none()
+                return UnidadDeTrabajo.objects.none()
 
             if self.q:
                 qs = qs.filter(titulo__icontains=self.q)

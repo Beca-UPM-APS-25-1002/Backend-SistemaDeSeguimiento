@@ -4,21 +4,50 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.functional import cached_property
 from django.core.cache import cache
+from .validators import validate_año
+from django.db.models import F
+
+
+class AñoAcademico(models.Model):
+    año_academico = models.CharField(
+        null=False, max_length=7, primary_key=True, validators=[validate_año]
+    )
+
+    def __str__(self):
+        return self.año_academico
+
+    def save(self, *args, **kwargs):
+        """Invalidamos el cache de años si se ha registrado un nuevo modulo"""
+        cache.delete("año_academico_actual")
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Año Academico"
+        verbose_name_plural = "Años Academicos"
+        ordering = ["-año_academico"]
 
 
 class Ciclo(models.Model):
-    nombre = models.CharField(null=False, max_length=255, primary_key=True)
+    nombre = models.CharField(null=False, max_length=255)
+    año_academico = models.ForeignKey(
+        AñoAcademico,
+        on_delete=models.RESTRICT,
+        to_field="año_academico",
+        related_name="ciclos",
+    )
 
     def __str__(self):
-        return self.nombre
+        return f"{self.nombre} - {self.año_academico}"
 
 
 class Grupo(models.Model):
-    nombre = models.CharField(null=False, max_length=255, primary_key=True)
-    ciclo = models.ForeignKey(
-        Ciclo, on_delete=models.RESTRICT, to_field="nombre", related_name="grupos"
-    )
+    nombre = models.CharField(null=False, max_length=255)
+    ciclo = models.ForeignKey(Ciclo, on_delete=models.RESTRICT, related_name="grupos")
     curso = models.IntegerField(null=False, validators=[MinValueValidator(1)])
+
+    @cached_property
+    def año_academico(self):
+        return self.ciclo.año_academico
 
     def __str__(self):
         return f"{self.nombre} - {self.ciclo}"
@@ -27,37 +56,31 @@ class Grupo(models.Model):
 class Modulo(models.Model):
     nombre = models.CharField(null=False, max_length=255)
     curso = models.IntegerField(null=False, validators=[MinValueValidator(1)])
-    año_academico = models.CharField(null=False, max_length=10, db_index=True)
-    ciclo = models.ForeignKey(
-        Ciclo, on_delete=models.RESTRICT, to_field="nombre", related_name="modulos"
-    )
+    ciclo = models.ForeignKey(Ciclo, on_delete=models.RESTRICT, related_name="modulos")
 
     class Meta:
         indexes = [
-            models.Index(fields=["año_academico"]),
             models.Index(fields=["ciclo"]),
         ]
 
-    def save(self, *args, **kwargs):
-        """Invalidamos el cache de años si se ha registrado un nuevo modulo"""
-        cache.delete("año_academico_actual")
-        super().save(*args, **kwargs)
+    @cached_property
+    def año_academico(self):
+        return self.ciclo.año_academico
 
     def __str__(self):
         return f"{self.nombre} - {self.ciclo} - {self.año_academico}"
 
 
-class UnidadDeTemario(models.Model):
+class UnidadDeTrabajo(models.Model):
     numero_tema = models.IntegerField(null=False, validators=[MinValueValidator(1)])
     titulo = models.CharField(max_length=255, null=False)
-    impartido = models.BooleanField(default=False)
     modulo = models.ForeignKey(
         Modulo, on_delete=models.CASCADE, related_name="unidades_de_temario"
     )
 
-    @property
+    @cached_property
     def año_academico(self):
-        return self.modulo.año_academico
+        return self.modulo.ciclo.año_academico
 
     def __str__(self):
         return f"T{self.numero_tema} - {self.titulo}"
@@ -65,6 +88,7 @@ class UnidadDeTemario(models.Model):
     class Meta:
         verbose_name = "Unidad de Temario"
         verbose_name_plural = "Unidades de Temario"
+        ordering = ["numero_tema"]
 
 
 class ProfesorManager(BaseUserManager):
@@ -146,7 +170,7 @@ class Docencia(models.Model):
 
     @cached_property
     def año_academico(self):
-        return self.modulo.año_academico
+        return self.modulo.ciclo.año_academico
 
     class Meta:
         # Garantizar que un profesor no sea asignado al mismo módulo y grupo dos veces en el mismo curso académico.
@@ -157,7 +181,7 @@ class Docencia(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.profesor.nombre} - {self.modulo.nombre} ({self.modulo.año_academico}) - {self.grupo.nombre}"
+        return f"{self.profesor.nombre} - {self.modulo.nombre} ({self.modulo.ciclo.año_academico}) - {self.grupo.nombre}"
 
 
 class EstadoSeguimiento(models.TextChoices):
@@ -167,8 +191,8 @@ class EstadoSeguimiento(models.TextChoices):
 
 
 class Seguimiento(models.Model):
-    temario_alcanzado = models.ForeignKey(
-        UnidadDeTemario, on_delete=models.RESTRICT, related_name="seguimientos"
+    temario_actual = models.ForeignKey(
+        UnidadDeTrabajo, on_delete=models.RESTRICT, related_name="seguimientos"
     )
     ultimo_contenido_impartido = models.CharField(max_length=255)
     estado = models.CharField(
@@ -186,7 +210,7 @@ class Seguimiento(models.Model):
 
     @cached_property
     def año_academico(self):
-        return self.docencia.modulo.año_academico
+        return self.docencia.modulo.ciclo.año_academico
 
     @cached_property
     def profesor(self):
@@ -202,14 +226,3 @@ class Seguimiento(models.Model):
             models.Index(fields=["mes"]),
             models.Index(fields=["docencia", "mes"]),
         ]
-
-    def save(self, *args, **kwargs):
-        """Actualiza automaticamente el estado impartido dependiendo de el utlimo tema impartido"""
-        super().save(*args, **kwargs)
-
-        unidades = UnidadDeTemario.objects.filter(modulo=self.temario_alcanzado.modulo)
-
-        unidades.update(impartido=False)
-        unidades.filter(numero_tema__lte=self.temario_alcanzado.numero_tema).update(
-            impartido=True
-        )

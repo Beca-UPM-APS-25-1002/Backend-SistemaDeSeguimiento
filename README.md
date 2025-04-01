@@ -247,7 +247,7 @@ Consigue los seguimientos del profesor autenticado. Se puede filtrar con los par
     "cumple_programacion": true,
     "justificacion_cumple_programacion": "",
     "mes": 5,
-    "temario_alcanzado": 1,
+    "temario_actual": 1,
     "docencia": 1
   },
   {
@@ -264,7 +264,7 @@ Consigue los seguimientos del profesor autenticado. Se puede filtrar con los par
     "cumple_programacion": true,
     "justificacion_cumple_programacion": "",
     "mes": 7,
-    "temario_alcanzado": 2,
+    "temario_actual": 2,
     "docencia": 1
   }
 ]
@@ -283,7 +283,7 @@ Recibe:
   "cumple_programacion": true,
   "justificacion_cumple_programacion": "justificiacion",
   "mes": 5,
-  "temario_alcanzado": 1,
+  "temario_actual": 1,
   "docencia": 1
 }
 ```
@@ -305,7 +305,7 @@ Devuelve:
   "cumple_programacion": true,
   "justificacion_cumple_programacion": "",
   "mes": 5,
-  "temario_alcanzado": 1,
+  "temario_actual": 1,
   "docencia": 1
 }
 ```
