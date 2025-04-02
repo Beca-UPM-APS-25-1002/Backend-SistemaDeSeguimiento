@@ -36,6 +36,7 @@ STATIC_ROOT = os.path.join(PROJECT_DIR, "static")
 INSTALLED_APPS = [
     "dal",
     "dal_select2",
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -153,4 +154,25 @@ DJOSER = {
     "USERNAME_RESET_CONFIRM_URL": "#/username/reset/confirm/{uid}/{token}",
     "SEND_ACTIVATION_EMAIL": False,
     "SERIALIZERS": {},
+}
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Admin Seguimientos",
+    "site_header": "Seguimientos",
+    "site_brand": "Seguimientos",
+    "welcome_sign": "Bienvenido a la pantalla de administración del sistema de Seguimientos",
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "icons": {
+        "seguimientos.ciclo": "fas fa-graduation-cap",
+        "seguimientos.añoacademico": "fas fa-calendar",
+        "seguimientos.grupo": "fas fa-people-group",
+        "seguimientos.modulo": "fas fa-chalkboard",
+        "seguimientos.profesor": "fas fa-chalkboard-user",
+        "seguimientos.seguimiento": "fas fa-clipboard",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": True,
+    "changeform_format": "single",
 }
