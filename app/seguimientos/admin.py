@@ -2,15 +2,18 @@ import calendar
 
 from dal import autocomplete
 from django import forms
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.contrib.auth.admin import GroupAdmin  # noqa: F401
 from django.contrib.auth.models import Group
 from django.forms import ModelForm
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from django.urls import path
 from django.utils.html import format_html
 from import_export import fields, resources
 from import_export.admin import ExportMixin
+from django.urls import reverse
+from django.http import HttpResponseRedirect
+from django.core.exceptions import ValidationError
 
 from .models import (
     AñoAcademico,
@@ -62,7 +65,195 @@ class ModuloInline(admin.TabularInline):
 
 @admin.register(AñoAcademico)
 class AñoAcademicoAdmin(admin.ModelAdmin):
-    list_display = ["año_academico"]
+    list_display = ("año_academico", "get_clonar_button")
+
+    def get_clonar_button(self, obj):
+        """Añade un botón para clonar en cada fila"""
+        url = reverse("admin:clonar_opciones", args=[obj.año_academico])
+        return format_html(
+            '<a class="btn btn-primary btn-sm" href="{}" style="color: white;">Clonar</a>',
+            url,
+        )
+
+    get_clonar_button.short_description = "Acciones"
+
+    def get_urls(self):
+        """Añade URLs personalizadas al admin"""
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "<path:object_id>/clonar/",
+                self.admin_site.admin_view(self.clonar_opciones_view),
+                name="clonar_opciones",
+            ),
+            path(
+                "<path:object_id>/ejecutar_clonacion/",
+                self.admin_site.admin_view(self.ejecutar_clonacion_view),
+                name="ejecutar_clonacion",
+            ),
+        ]
+        return custom_urls + urls
+
+    def clonar_opciones_view(self, request, object_id):
+        """Vista que muestra el formulario con opciones de clonación"""
+        try:
+            año_academico = AñoAcademico.objects.get(pk=object_id)
+            context = {
+                "año_academico": año_academico,
+                "opts": self.model._meta,
+                "title": f"Clonar año académico: {año_academico}",
+                **self.admin_site.each_context(request),
+            }
+            return render(request, "admin/clonar_opciones.html", context)
+        except AñoAcademico.DoesNotExist:
+            self.message_user(request, "Año académico no encontrado", level="error")
+            return HttpResponseRedirect(
+                reverse("admin:seguimientos_añoacademico_changelist")
+            )
+
+    def ejecutar_clonacion_view(self, request, object_id):
+        """Vista que procesa la clonación según las opciones seleccionadas"""
+        if request.method != "POST":
+            return HttpResponseRedirect(
+                reverse("admin:clonar_opciones", args=[object_id])
+            )
+
+        try:
+            año_academico_original = AñoAcademico.objects.get(pk=object_id)
+            nuevo_año_valor = request.POST.get("nuevo_anio")
+            opcion_clonacion = request.POST.get("opcion_clonacion")
+
+            # Validar que el nuevo año no exista ya
+            if AñoAcademico.objects.filter(año_academico=nuevo_año_valor).exists():
+                self.message_user(
+                    request,
+                    f"El año académico {nuevo_año_valor} ya existe",
+                    level="error",
+                )
+                return HttpResponseRedirect(
+                    reverse("admin:clonar_opciones", args=[object_id])
+                )
+
+            # Crear el nuevo año académico
+            nuevo_año = AñoAcademico(año_academico=nuevo_año_valor)
+            try:
+                nuevo_año.full_clean()
+            except ValidationError as err:
+                self.message_user(
+                    request,
+                    err.messages[0],
+                    level="error",
+                )
+                return HttpResponseRedirect(
+                    reverse("admin:clonar_opciones", args=[object_id])
+                )
+            else:
+                nuevo_año.save()
+
+            # Lógica de clonación según la opción seleccionada
+            if opcion_clonacion == "ciclos":
+                self.clonar_ciclos(año_academico_original, nuevo_año)
+                mensaje = f"Ciclos clonados al año académico {nuevo_año_valor}"
+            elif opcion_clonacion == "modulos":
+                self.clonar_modulos_y_grupos(año_academico_original, nuevo_año)
+                mensaje = (
+                    f"Ciclos y módulos clonados al año académico {nuevo_año_valor}"
+                )
+            elif opcion_clonacion == "docencias":
+                self.clonar_docencias(año_academico_original, nuevo_año)
+                mensaje = f"Ciclos, módulos y docencias clonados al año académico {nuevo_año_valor}"
+
+            self.message_user(request, mensaje)
+            return HttpResponseRedirect(
+                reverse("admin:seguimientos_añoacademico_changelist")
+            )
+
+        except AñoAcademico.DoesNotExist:
+            self.message_user(request, "Año académico no encontrado", level="error")
+            return HttpResponseRedirect(
+                reverse("admin:seguimientos_añoacademico_changelist")
+            )
+        except Exception as e:
+            self.message_user(
+                request, f"Error durante la clonación: {str(e)}", level="error"
+            )
+            return HttpResponseRedirect(
+                reverse("admin:clonar_opciones", args=[object_id])
+            )
+
+    def clonar_ciclos(self, año_original, año_nuevo):
+        """Clona los ciclos del año original al año nuevo"""
+        ciclos_mapeados = {}
+        ciclos_originales = Ciclo.objects.filter(año_academico=año_original)
+
+        for ciclo in ciclos_originales:
+            nuevo_ciclo = Ciclo.objects.create(
+                nombre=ciclo.nombre, año_academico=año_nuevo
+            )
+            ciclos_mapeados[ciclo.id] = nuevo_ciclo
+
+        return ciclos_mapeados
+
+    def clonar_modulos_y_grupos(self, año_original, año_nuevo):
+        """Clona ciclos y módulos"""
+        ciclos_mapeados = self.clonar_ciclos(año_original, año_nuevo)
+        modulos_mapeados = {}
+        grupos_mapeados = {}
+        print("llega")
+        # Clonar módulos
+        modulos_originales = Modulo.objects.filter(ciclo__año_academico=año_original)
+        print(modulos_originales)
+        for modulo in modulos_originales:
+            nuevo_modulo = Modulo.objects.create(
+                nombre=modulo.nombre,
+                curso=modulo.curso,
+                ciclo=ciclos_mapeados[modulo.ciclo_id],
+            )
+            modulos_mapeados[modulo.id] = nuevo_modulo
+
+            # Clonar unidades de trabajo para cada módulo
+            unidades = UnidadDeTrabajo.objects.filter(modulo=modulo)
+            for unidad in unidades:
+                UnidadDeTrabajo.objects.create(
+                    numero_tema=unidad.numero_tema,
+                    titulo=unidad.titulo,
+                    modulo=nuevo_modulo,
+                )
+
+        # Clonar grupos
+        for ciclo_original_id, ciclo_nuevo in ciclos_mapeados.items():
+            grupos = Grupo.objects.filter(ciclo_id=ciclo_original_id)
+            for grupo in grupos:
+                grupo_nuevo = Grupo.objects.create(
+                    nombre=grupo.nombre, ciclo=ciclo_nuevo, curso=grupo.curso
+                )
+                grupos_mapeados[grupo.id] = grupo_nuevo
+
+        return modulos_mapeados, grupos_mapeados
+
+    def clonar_docencias(self, año_original, año_nuevo):
+        """Clona ciclos, módulos y docencias"""
+        modulos_mapeados, grupos_mapeados = self.clonar_modulos_y_grupos(
+            año_original, año_nuevo
+        )
+
+        # Clonar docencias
+        docencias = Docencia.objects.filter(modulo__ciclo__año_academico=año_original)
+
+        for docencia in docencias:
+            if (
+                docencia.modulo_id in modulos_mapeados
+                and docencia.grupo_id in grupos_mapeados
+            ):
+                try:
+                    Docencia.objects.create(
+                        profesor=docencia.profesor,
+                        grupo=grupos_mapeados[docencia.grupo_id],
+                        modulo=modulos_mapeados[docencia.modulo_id],
+                    )
+                except Exception:
+                    # Ignora errores de clave única si ya existe una docencia similar
+                    pass
 
 
 @admin.register(Ciclo)
@@ -100,74 +291,7 @@ class ModuloAdmin(admin.ModelAdmin):
     ]
     list_filter = ["ciclo__año_academico", "curso", "ciclo"]
     search_fields = ["nombre", "ciclo__nombre", "ciclo__año_academico"]
-    actions = ["duplicar_modulos"]
     inlines = [UnidadDeTrabajoInline, DocenciaInline]
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path(
-                "duplicar_modulos/",
-                self.admin_site.admin_view(self.duplicar_modulos_view),
-                name="duplicar_modulos",
-            ),
-        ]
-        return custom_urls + urls
-
-    def duplicar_modulos(self, request, queryset):
-        """Redirige a la página de selección de año académico."""
-        if not queryset.exists():
-            self.message_user(
-                request, "No has seleccionado ningún módulo.", level=messages.WARNING
-            )
-            return redirect("/admin/seguimientos/modulo/")
-
-        # Guardamos en la sesión los IDs de los módulos seleccionados
-        request.session["modulos_a_duplicar"] = list(
-            queryset.values_list("id", flat=True)
-        )
-        return redirect("/admin/seguimientos/modulo/duplicar_modulos/")
-
-    duplicar_modulos.short_description = "Duplicar módulos a otro año"
-
-    def duplicar_modulos_view(self, request):
-        """Vista personalizada para introducir el nuevo año académico."""
-        modulos_ids = request.session.get("modulos_a_duplicar", [])
-        if not modulos_ids:
-            messages.error(request, "No has seleccionado ningún módulo para duplicar.")
-            return redirect("/admin/seguimientos/modulo/")
-
-        modulos = Modulo.objects.filter(id__in=modulos_ids)
-
-        if request.method == "POST":
-            nuevo_anio = request.POST.get("nuevo_anio")
-            if not nuevo_anio:
-                messages.error(request, "Debes ingresar un año académico válido.")
-                return redirect("/admin/seguimientos/modulo/duplicar_modulos/")
-
-            for modulo in modulos:
-                nuevo_modulo = Modulo.objects.create(
-                    nombre=modulo.nombre,
-                    curso=modulo.curso,
-                    año_academico=nuevo_anio,
-                    ciclo=modulo.ciclo,
-                )
-                # Clonar las Unidades de Temario
-                unidades = UnidadDeTrabajo.objects.filter(modulo=modulo)
-                for unidad in unidades:
-                    UnidadDeTrabajo.objects.create(
-                        numero_tema=unidad.numero_tema,
-                        titulo=unidad.titulo,
-                        impartido=False,
-                        modulo=nuevo_modulo,
-                    )
-
-            messages.success(
-                request, f"Se duplicaron {modulos.count()} módulos al año {nuevo_anio}."
-            )
-            return redirect("/admin/seguimientos/modulo/")
-
-        return render(request, "admin/duplicar_modulos.html", {"modulos": modulos})
 
 
 @admin.register(UnidadDeTrabajo)
@@ -252,7 +376,7 @@ class DocenciaAdmin(admin.ModelAdmin):
     search_fields = [
         "profesor__nombre",
         "modulo__nombre",
-        "modulo__año_academico",
+        "modulo__ciclo__año_academico",
         "grupo__nombre",
     ]
     autocomplete_fields = ["profesor", "grupo", "modulo"]

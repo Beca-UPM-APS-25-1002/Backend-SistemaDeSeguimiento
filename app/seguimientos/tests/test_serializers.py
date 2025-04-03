@@ -1,10 +1,10 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from rest_framework.exceptions import ValidationError
 from django.urls import reverse
 
 from seguimientos.models import (
+    AñoAcademico,
     Ciclo,
     Grupo,
     Modulo,
@@ -13,25 +13,25 @@ from seguimientos.models import (
     Docencia,
     Seguimiento,
 )
-from seguimientos.serializers import SeguimientoSerializer
 
 
 class SeguimientoSerializerTests(TestCase):
     def setUp(self):
         # Crear datos de prueba
         self.client = APIClient()
-        self.ciclo = Ciclo.objects.create(nombre="Desarrollo de Aplicaciones Web")
+        self.year = AñoAcademico.objects.create(año_academico="2024-25")
+        self.ciclo = Ciclo.objects.create(
+            nombre="Desarrollo de Aplicaciones Web", año_academico=self.year
+        )
         self.grupo = Grupo.objects.create(nombre="DAW1A", ciclo=self.ciclo, curso=1)
         self.modulo1 = Modulo.objects.create(
             nombre="Programación",
             curso=1,
-            año_academico="2023/2024",
             ciclo=self.ciclo,
         )
         self.modulo2 = Modulo.objects.create(
             nombre="Bases de Datos",
             curso=1,
-            año_academico="2023/2024",
             ciclo=self.ciclo,
         )
         self.profesor = Profesor.objects.create(
@@ -63,6 +63,7 @@ class SeguimientoSerializerTests(TestCase):
             "mes": 10,
             "ultimo_contenido_impartido": "Clases y objetos",
             "estado": "AL_DIA",
+            "evaluacion": "PRIMERA",
         }
         self.client.force_authenticate(user=self.profesor)
         response = self.client.post(url, data, format="json")
@@ -76,6 +77,7 @@ class SeguimientoSerializerTests(TestCase):
             "mes": 10,
             "ultimo_contenido_impartido": "Clases y objetos",
             "estado": "AL_DIA",
+            "evaluacion": "PRIMERA",
         }
         self.client.force_authenticate(user=self.profesor)
         response = self.client.post(url, data, format="json")
@@ -89,6 +91,7 @@ class SeguimientoSerializerTests(TestCase):
             mes=10,
             ultimo_contenido_impartido="Clases y objetos",
             estado="AL_DIA",
+            evaluacion="PRIMERA",
         )
         url = reverse("seguimiento-list")
         data = {
@@ -97,6 +100,7 @@ class SeguimientoSerializerTests(TestCase):
             "mes": 10,
             "ultimo_contenido_impartido": "Herencia",
             "estado": "ATRASADO",
+            "evaluacion": "PRIMERA",
         }
         self.client.force_authenticate(user=self.profesor2)
         response = self.client.post(url, data, format="json")
@@ -111,6 +115,7 @@ class SeguimientoSerializerTests(TestCase):
             "mes": 11,
             "ultimo_contenido_impartido": "Polimorfismo",
             "estado": "ADELANTADO",
+            "evaluacion": "PRIMERA",
         }
         self.client.force_authenticate(user=self.profesor)
         response = self.client.post(url, data, format="json")
@@ -127,6 +132,7 @@ class SeguimientoSerializerTests(TestCase):
             "mes": 9,
             "ultimo_contenido_impartido": "Estructuras de control",
             "estado": "AL_DIA",
+            "evaluacion": "PRIMERA",
         }
         self.client.force_authenticate(user=self.profesor)
         response = self.client.post(url, data, format="json")
@@ -142,6 +148,7 @@ class SeguimientoSerializerTests(TestCase):
             mes=9,
             ultimo_contenido_impartido="Estructuras de control",
             estado="AL_DIA",
+            evaluacion="PRIMERA",
         )
         url = reverse("seguimiento-list")
         data = {
@@ -150,6 +157,7 @@ class SeguimientoSerializerTests(TestCase):
             "mes": 9,
             "ultimo_contenido_impartido": "Herencia",
             "estado": "ATRASADO",
+            "evaluacion": "PRIMERA",
         }
         self.client.force_authenticate(user=self.profesor)
         response = self.client.post(url, data, format="json")
@@ -165,6 +173,7 @@ class SeguimientoSerializerTests(TestCase):
             mes=9,
             ultimo_contenido_impartido="Estructuras de control",
             estado="AL_DIA",
+            evaluacion="PRIMERA",
         )
         url = reverse("seguimiento-detail", args=[seguimiento.pk])
         data = {
@@ -173,6 +182,7 @@ class SeguimientoSerializerTests(TestCase):
             "mes": 10,  # Intento de cambiar el mes
             "ultimo_contenido_impartido": "Herencia",
             "estado": "ATRASADO",
+            "evaluacion": "PRIMERA",
         }
         self.client.force_authenticate(user=self.profesor)
         response = self.client.put(url, data, format="json")

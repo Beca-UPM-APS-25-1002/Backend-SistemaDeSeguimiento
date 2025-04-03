@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.test import TestCase
 from rest_framework.test import APIClient
 from seguimientos.models import (
+    AñoAcademico,
     Ciclo,
     Grupo,
     Modulo,
@@ -18,11 +19,12 @@ class ModuloViewSetTestCase(APITestCase):
     def setUp(self):
         """Configura los datos iniciales para probar la acción 'temario'"""
         self.client = APIClient()
-        self.ciclo = Ciclo.objects.create(nombre="Informática")
+        self.year = AñoAcademico.objects.create(año_academico="2024-25")
+        self.ciclo = Ciclo.objects.create(nombre="Informática", año_academico=self.year)
 
         # Módulo con temario
         self.modulo = Modulo.objects.create(
-            nombre="Programación", curso=1, año_academico="2024", ciclo=self.ciclo
+            nombre="Programación", curso=1, ciclo=self.ciclo
         )
         self.tema1 = UnidadDeTrabajo.objects.create(
             numero_tema=1, titulo="Variables", modulo=self.modulo
@@ -33,7 +35,7 @@ class ModuloViewSetTestCase(APITestCase):
 
         # Módulo sin temario
         self.modulo_sin_temario = Modulo.objects.create(
-            nombre="Bases de Datos", curso=1, año_academico="2024", ciclo=self.ciclo
+            nombre="Bases de Datos", curso=1, ciclo=self.ciclo
         )
 
         # URLs
@@ -74,16 +76,15 @@ class ModuloViewSetTestCase(APITestCase):
 class SeguimientosFaltantesViewTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.año_academico = "2024-2025"
         self.mes = 3
 
         # Crear datos de test
-        self.ciclo = Ciclo.objects.create(nombre="Informática")
+        self.year = AñoAcademico.objects.create(año_academico="2024-25")
+        self.ciclo = Ciclo.objects.create(nombre="Informática", año_academico=self.year)
         self.grupo = Grupo.objects.create(nombre="Grupo A", ciclo=self.ciclo, curso=1)
         self.modulo = Modulo.objects.create(
             nombre="Programación",
             curso=1,
-            año_academico=self.año_academico,
             ciclo=self.ciclo,
         )
         self.profesor1 = Profesor.objects.create_user(
@@ -117,7 +118,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
         response = self.client.get(
             reverse(
                 "seguimientos-faltantes",
-                kwargs={"año_academico": self.año_academico, "mes": self.mes},
+                kwargs={"año_academico": self.year.año_academico, "mes": self.mes},
             )
             + "?all"
         )
@@ -134,13 +135,14 @@ class SeguimientosFaltantesViewTestCase(TestCase):
             estado="AL_DIA",
             mes=self.mes,
             docencia=self.docencia1,
+            evaluacion="PRIMERA",
         )
         self.client.force_authenticate(user=self.profesor1)
 
         response = self.client.get(
             reverse(
                 "seguimientos-faltantes",
-                kwargs={"año_academico": self.año_academico, "mes": self.mes},
+                kwargs={"año_academico": self.year.año_academico, "mes": self.mes},
             )
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -154,6 +156,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
             estado="AL_DIA",
             mes=self.mes,
             docencia=self.docencia1,
+            evaluacion="PRIMERA",
         )
         Seguimiento.objects.create(
             temario_actual=self.unidad,
@@ -161,13 +164,14 @@ class SeguimientosFaltantesViewTestCase(TestCase):
             estado="AL_DIA",
             mes=self.mes,
             docencia=self.docencia2,
+            evaluacion="PRIMERA",
         )
         self.client.force_authenticate(user=self.profesor1)
         # Verificar que ninguna docencia está pendiente de seguimiento
         response = self.client.get(
             reverse(
                 "seguimientos-faltantes",
-                kwargs={"año_academico": self.año_academico, "mes": self.mes},
+                kwargs={"año_academico": self.year.año_academico, "mes": self.mes},
             )
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -178,7 +182,6 @@ class SeguimientosFaltantesViewTestCase(TestCase):
         modulo2 = Modulo.objects.create(
             nombre="Bases de Datos",
             curso=1,
-            año_academico=self.año_academico,
             ciclo=self.ciclo,
         )
         docencia3 = Docencia.objects.create(
@@ -189,7 +192,7 @@ class SeguimientosFaltantesViewTestCase(TestCase):
         response = self.client.get(
             reverse(
                 "seguimientos-faltantes",
-                kwargs={"año_academico": self.año_academico, "mes": self.mes},
+                kwargs={"año_academico": self.year.año_academico, "mes": self.mes},
             )
             + "?all"
         )
@@ -205,13 +208,14 @@ class SeguimientosFaltantesViewTestCase(TestCase):
             estado="AL_DIA",
             mes=self.mes,
             docencia=docencia3,
+            evaluacion="PRIMERA",
         )
 
         # Verificar que solo las docencias originales siguen sin seguimiento
         response = self.client.get(
             reverse(
                 "seguimientos-faltantes",
-                kwargs={"año_academico": self.año_academico, "mes": self.mes},
+                kwargs={"año_academico": self.year.año_academico, "mes": self.mes},
             )
             + "?all"
         )
@@ -230,9 +234,11 @@ class SeguimientoViewSetTests(APITestCase):
 
     def setUp(self):
         """Configuración inicial de datos para las pruebas"""
+        self.year = AñoAcademico.objects.create(año_academico="2024-25")
+
         # Crear ciclos
-        self.ciclo1 = Ciclo.objects.create(nombre="DAW")
-        self.ciclo2 = Ciclo.objects.create(nombre="DAM")
+        self.ciclo1 = Ciclo.objects.create(nombre="DAW", año_academico=self.year)
+        self.ciclo2 = Ciclo.objects.create(nombre="DAM", año_academico=self.year)
 
         # Crear grupos
         self.grupo1 = Grupo.objects.create(nombre="Grupo A", ciclo=self.ciclo1, curso=1)
@@ -240,12 +246,11 @@ class SeguimientoViewSetTests(APITestCase):
 
         # Crear módulos
         self.modulo1 = Modulo.objects.create(
-            nombre="Programación", curso=1, año_academico="2024-2025", ciclo=self.ciclo1
+            nombre="Programación", curso=1, ciclo=self.ciclo1
         )
         self.modulo2 = Modulo.objects.create(
             nombre="Bases de Datos",
             curso=1,
-            año_academico="2024-2025",
             ciclo=self.ciclo1,
         )
 
@@ -288,6 +293,7 @@ class SeguimientoViewSetTests(APITestCase):
             estado="AL_DIA",
             mes=1,
             docencia=self.docencia1,
+            evaluacion="PRIMERA",
         )
 
         self.seguimiento2 = Seguimiento.objects.create(
@@ -296,6 +302,7 @@ class SeguimientoViewSetTests(APITestCase):
             estado="AL_DIA",
             mes=1,
             docencia=self.docencia2,
+            evaluacion="PRIMERA",
         )
 
         self.seguimiento3 = Seguimiento.objects.create(
@@ -304,6 +311,7 @@ class SeguimientoViewSetTests(APITestCase):
             estado="ADELANTADO",
             mes=2,
             docencia=self.docencia3,
+            evaluacion="PRIMERA",
         )
 
         # Preparar el cliente API
@@ -365,6 +373,7 @@ class SeguimientoViewSetTests(APITestCase):
             "estado": "AL_DIA",
             "mes": 3,
             "docencia": self.docencia1.id,
+            "evaluacion": "PRIMERA",
         }
 
         response = self.client.post(self.url_list, data, format="json")
@@ -402,6 +411,7 @@ class SeguimientoViewSetTests(APITestCase):
             "estado": "ADELANTADO",
             "mes": 1,
             "docencia": self.docencia1.id,
+            "evaluacion": "PRIMERA",
         }
 
         response = self.client.put(url_detail, data, format="json")
@@ -424,6 +434,7 @@ class SeguimientoViewSetTests(APITestCase):
             "estado": "ATRASADO",
             "mes": 1,
             "docencia": self.docencia2.id,
+            "evaluacion": "PRIMERA",
         }
 
         response = self.client.put(url_detail, data, format="json")
@@ -472,7 +483,7 @@ class SeguimientoViewSetTests(APITestCase):
         )
 
         # Crear una docencia para profesor3 con el mismo grupo y módulo que docencia1
-        docencia4 = Docencia.objects.create(
+        Docencia.objects.create(
             profesor=profesor3, grupo=self.grupo1, modulo=self.modulo1
         )
 

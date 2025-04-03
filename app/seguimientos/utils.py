@@ -1,5 +1,6 @@
 from django.core.cache import cache
-from .models import Modulo
+from .models import AñoAcademico
+from datetime import datetime
 
 
 def get_año_academico_actual():
@@ -15,13 +16,12 @@ def get_año_academico_actual():
         return año_cacheado
 
     # Obtener el módulo con el ID más alto (el más reciente)
-    modulo_mas_reciente = Modulo.objects.order_by("-id").first()
+    latest_year = AñoAcademico.objects.order_by("-año_academico").first()
 
-    if modulo_mas_reciente:
-        ultimo_año = modulo_mas_reciente.año_academico
+    if latest_year:
+        ultimo_año = latest_year.año_academico
     else:
-        # Si no hay módulos, usar la lógica del año actual como respaldo
-        from datetime import datetime
+        # Si no hay años, usar la lógica del año actual como respaldo
 
         fecha_actual = datetime.now()
         mes_actual = fecha_actual.month

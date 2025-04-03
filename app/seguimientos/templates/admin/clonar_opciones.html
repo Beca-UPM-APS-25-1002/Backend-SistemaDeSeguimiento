@@ -1,0 +1,95 @@
+{% extends "admin/base_site.html" %} {% load i18n admin_urls %}
+<!--Start-->
+{% block content%}
+<div class="container mt-4">
+  <h1>Opciones de clonación para {{ año_academico }}</h1>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <form
+        method="post"
+        action="{% url 'admin:ejecutar_clonacion' año_academico.pk %}"
+      >
+        {% csrf_token %}
+
+        <div class="form-group mb-4">
+          <label for="nuevo_anio">Nuevo año académico:</label>
+          <input
+            type="text"
+            name="nuevo_anio"
+            id="nuevo_anio"
+            class="form-control"
+            placeholder="Ej: 2025-26"
+            pattern="^\d{4}-\d{2}$"
+            required
+          />
+          <small class="form-text text-muted"
+            >Formato: YYYY-YY (Ejemplo: 2025-26)</small
+          >
+        </div>
+
+        <div class="form-group mb-4">
+          <label>Selecciona qué deseas clonar:</label>
+
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="opcion_clonacion"
+              id="opcion_ciclos"
+              value="ciclos"
+              checked
+            />
+            <label class="form-check-label" for="opcion_ciclos">
+              <strong>Solo Ciclos</strong> - Clona únicamente la estructura de
+              ciclos
+            </label>
+          </div>
+
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="opcion_clonacion"
+              id="opcion_modulos"
+              value="modulos"
+            />
+            <label class="form-check-label" for="opcion_modulos">
+              <strong>Ciclos y Módulos</strong> - Clona los ciclos y sus módulos
+              asociados
+            </label>
+          </div>
+
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="opcion_clonacion"
+              id="opcion_docencias"
+              value="docencias"
+            />
+            <label class="form-check-label" for="opcion_docencias">
+              <strong>Ciclos, Módulos y Docencias</strong> - Clona la estructura
+              completa incluyendo docencias
+            </label>
+          </div>
+        </div>
+
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i> Cada opción incluye las anteriores.
+          La opción más completa es "Ciclos, Módulos y Docencias".
+        </div>
+
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary">
+            Ejecutar Clonación
+          </button>
+          <a href="{% url 'admin:index' %}" class="btn btn-secondary"
+            >Cancelar</a
+          >
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

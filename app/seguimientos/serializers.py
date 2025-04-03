@@ -1,6 +1,27 @@
 from rest_framework import serializers
-from .models import Seguimiento, Profesor, Modulo, Docencia, UnidadDeTrabajo, Grupo
+from .models import (
+    Seguimiento,
+    Profesor,
+    Modulo,
+    Docencia,
+    UnidadDeTrabajo,
+    Grupo,
+    AñoAcademico,
+    Ciclo,
+)
 import re
+
+
+class AñoAcademicoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AñoAcademico
+        fields = "año_academico"
+
+
+class CicloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ciclo
+        fields = "__all__"
 
 
 class UnidadDeTrabajoSerializer(serializers.ModelSerializer):
@@ -10,6 +31,8 @@ class UnidadDeTrabajoSerializer(serializers.ModelSerializer):
 
 
 class ModuloSerializer(serializers.ModelSerializer):
+    ciclo = CicloSerializer()
+
     class Meta:
         model = Modulo
         fields = "__all__"
@@ -39,7 +62,6 @@ class DocenciaSerializer(serializers.ModelSerializer):
 
 class SeguimientoSerializer(serializers.ModelSerializer):
     profesor = ProfesorSerializer(required=False)
-    año_academico = serializers.ReadOnlyField()
 
     class Meta:
         model = Seguimiento

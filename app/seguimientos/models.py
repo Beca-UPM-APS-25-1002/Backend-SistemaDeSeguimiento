@@ -5,7 +5,6 @@ from django.db import models
 from django.utils.functional import cached_property
 from django.core.cache import cache
 from .validators import validate_año
-from django.db.models import F
 
 
 class AñoAcademico(models.Model):
@@ -190,6 +189,12 @@ class EstadoSeguimiento(models.TextChoices):
     ADELANTADO = "ADELANTADO", "Adelantado"
 
 
+class EvaluacionSeguimiento(models.TextChoices):
+    PRIMERA = "PRIMERA", "Primera"
+    SEGUNDA = "SEGUNDA", "Segunda"
+    TERCERA = "TERCERA", "Tercera"
+
+
 class Seguimiento(models.Model):
     temario_actual = models.ForeignKey(
         UnidadDeTrabajo, on_delete=models.RESTRICT, related_name="seguimientos"
@@ -206,6 +211,9 @@ class Seguimiento(models.Model):
     mes = models.IntegerField(validators=[MaxValueValidator(12), MinValueValidator(1)])
     docencia = models.ForeignKey(
         Docencia, on_delete=models.CASCADE, related_name="seguimientos"
+    )
+    evaluacion = models.CharField(
+        choices=EvaluacionSeguimiento.choices, blank=False, null=False
     )
 
     @cached_property

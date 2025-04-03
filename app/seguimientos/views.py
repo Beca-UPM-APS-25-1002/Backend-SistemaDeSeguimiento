@@ -62,7 +62,9 @@ class SeguimientoViewSet(viewsets.ModelViewSet):
         )
         mes = self.request.query_params.get("mes")
         if year:
-            seguimientos = seguimientos.filter(docencia__modulo__año_academico=year)
+            seguimientos = seguimientos.filter(
+                docencia__modulo__ciclo__año_academico=year
+            )
         if mes:
             seguimientos = seguimientos.filter(mes=mes)
         return seguimientos
@@ -92,7 +94,7 @@ class DocenciaViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return Docencia.objects.filter(
             profesor=self.request.user,
-            modulo__año_academico=get_año_academico_actual(),
+            modulo__ciclo__año_academico=get_año_academico_actual(),
         )
 
 
@@ -115,11 +117,11 @@ class SeguimientosFaltantesView(generics.ListAPIView):
         mes = self.kwargs["mes"]
         user = self.request.user
         # Paso 1: Filtrar las instancias de Docencia por año académico
-        docencias = Docencia.objects.filter(modulo__año_academico=año_academico)
+        docencias = Docencia.objects.filter(modulo__ciclo__año_academico=año_academico)
 
         # Paso 2: Obtener todos los Seguimiento para el mes y año académico dados
         seguimientos = Seguimiento.objects.filter(
-            mes=mes, docencia__modulo__año_academico=año_academico
+            mes=mes, docencia__modulo__ciclo__año_academico=año_academico
         )
 
         # Paso 3: Excluir las Docencia que ya tienen un Seguimiento para el mes dado
@@ -179,7 +181,7 @@ class EnviarRecordatorioSeguimientoView(APIView):
             try:
                 docencia = Docencia.objects.select_related(
                     "profesor", "modulo", "grupo"
-                ).get(id=docencia_id, modulo__año_academico=año_academico)
+                ).get(id=docencia_id, modulo__ciclo__año_academico=año_academico)
 
                 if docencia.profesor.id not in profesores_docencias:
                     profesores_docencias[docencia.profesor.id] = {

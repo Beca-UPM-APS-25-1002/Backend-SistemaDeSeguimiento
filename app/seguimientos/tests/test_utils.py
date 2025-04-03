@@ -1,93 +1,123 @@
+from unittest.mock import patch, MagicMock
 from django.test import TestCase
 from django.core.cache import cache
-from unittest.mock import patch
-from seguimientos.utils import get_año_academico_actual
-from seguimientos.models import Modulo, Ciclo
+from seguimientos.models import AñoAcademico
+from seguimientos.utils import (
+    get_año_academico_actual,
+)
 
 
-class ObtenerAñoAcademicoTests(TestCase):
-    """
-    Tests para la función get_año_academico_actual en utils.py
-    """
-
+class GetAñoAcademicoActualTests(TestCase):
     def setUp(self):
-        """Configuración inicial para cada test"""
         # Limpiar la caché antes de cada prueba
         cache.clear()
 
-        # Crear un ciclo para usar en las pruebas
-        self.ciclo = Ciclo.objects.create(nombre="Desarrollo de Aplicaciones Web")
+        # Eliminar cualquier año académico existente
+        AñoAcademico.objects.all().delete()
 
-    def test_get_desde_cache(self):
+    def tearDown(self):
+        # Limpiar la caché después de cada prueba
+        cache.clear()
+
+    def test_devuelve_valor_cacheado_si_existe(self):
         """Prueba que la función devuelve el valor de la caché si existe"""
         # Establecer un valor en la caché
-        año_esperado = "2024-25"
-        cache.set("año_academico_actual", año_esperado, 3600)
+        cache.set("año_academico_actual", "2023-24", 86400)
 
-        # Obtener el año académico actual
-        año_obtenido = get_año_academico_actual()
+        # Llamar a la función
+        resultado = get_año_academico_actual()
 
-        # Verificar que se devolvió el valor de la caché
-        self.assertEqual(año_obtenido, año_esperado)
+        # Verificar que devuelve el valor cacheado
+        self.assertEqual(resultado, "2023-24")
 
-    def test_get_desde_modulo_mas_reciente(self):
-        """Prueba que la función obtiene el año del módulo más reciente"""
-        # Crear varios módulos con diferentes años académicos
-        Modulo.objects.create(
-            nombre="Programación", curso=1, año_academico="2023-24", ciclo=self.ciclo
-        )
+    def test_devuelve_año_de_bd_si_hay_registros(self):
+        """Prueba que la función devuelve el año del último registro en la BD"""
+        # Crear algunos años académicos
+        AñoAcademico.objects.create(año_academico="2022-23")
+        AñoAcademico.objects.create(año_academico="2023-24")
 
-        Modulo.objects.create(
-            nombre="Bases de Datos", curso=1, año_academico="2024-25", ciclo=self.ciclo
-        )
+        # Llamar a la función
+        resultado = get_año_academico_actual()
 
-        # El módulo con ID más alto debería tener el año más reciente
-        año_esperado = "2024-25"
+        # Verificar que devuelve el año académico más reciente
+        self.assertEqual(resultado, "2023-24")
 
-        # Obtener el año académico actual
-        año_obtenido = get_año_academico_actual()
+        # Verificar que el resultado se guardó en caché
+        self.assertEqual(cache.get("año_academico_actual"), "2023-24")
 
-        # Verificar que se devolvió el año del módulo más reciente
-        self.assertEqual(año_obtenido, año_esperado)
+    @patch("seguimientos.utils.datetime")  # Ajusta según dónde está tu función
+    def test_calcula_año_actual_antes_de_septiembre(self, mock_datetime):
+        """Prueba que calcula correctamente el año cuando es antes de septiembre"""
+        # Configurar el mock para devolver una fecha antes de septiembre
+        mock_date = MagicMock()
+        mock_date.month = 8  # Agosto
+        mock_date.year = 2023
+        mock_datetime.now.return_value = mock_date
 
-        # Verificar que el valor se almacenó en caché
-        self.assertEqual(cache.get("año_academico_actual"), año_esperado)
+        # Llamar a la función (sin años en la BD)
+        resultado = get_año_academico_actual()
 
-    def test_actualizacion_cache_despues_invalidacion(self):
-        """Prueba que la caché se actualiza después de ser invalidada"""
-        # Crear un módulo inicial
-        Modulo.objects.create(
-            nombre="Programación", curso=1, año_academico="2023-24", ciclo=self.ciclo
-        )
+        # Verificar el formato correcto para antes de septiembre
+        self.assertEqual(resultado, "2022-23")
 
-        # Obtener el año académico para que se guarde en caché
-        año_inicial = get_año_academico_actual()
-        self.assertEqual(año_inicial, "2023-24")
+        # Verificar que el resultado se guardó en caché
+        self.assertEqual(cache.get("año_academico_actual"), "2022-23")
 
-        # Simular la invalidación de caché que ocurriría con el signal
-        cache.delete("año_academico_actual")
+    @patch("seguimientos.utils.datetime")  # Ajusta según dónde está tu función
+    def test_calcula_año_actual_despues_de_septiembre(self, mock_datetime):
+        """Prueba que calcula correctamente el año cuando es después de septiembre"""
+        # Configurar el mock para devolver una fecha después de septiembre
+        mock_date = MagicMock()
+        mock_date.month = 10  # Octubre
+        mock_date.year = 2023
+        mock_datetime.now.return_value = mock_date
 
-        # Crear un nuevo módulo con un año más reciente
-        Modulo.objects.create(
-            nombre="Bases de Datos", curso=1, año_academico="2024-25", ciclo=self.ciclo
-        )
+        # Llamar a la función (sin años en la BD)
+        resultado = get_año_academico_actual()
 
-        # Obtener de nuevo el año académico
-        año_actualizado = get_año_academico_actual()
+        # Verificar el formato correcto para después de septiembre
+        self.assertEqual(resultado, "2023-24")
 
-        # Verificar que se devolvió el nuevo año
-        self.assertEqual(año_actualizado, "2024-25")
+        # Verificar que el resultado se guardó en caché
+        self.assertEqual(cache.get("año_academico_actual"), "2023-24")
 
-    def test_sin_modulos_valor_por_defecto(self):
-        """Prueba el valor por defecto cuando no hay módulos"""
-        # Asegurarse de que no hay módulos
-        Modulo.objects.all().delete()
+    def test_ordenamiento_correcto(self):
+        """Prueba que se selecciona el año que es el más reciente alfabéticamente"""
+        # Crear algunos años en orden no cronológico
+        AñoAcademico.objects.create(año_academico="2025-26")
+        # Asumiendo que el ID será más alto para este, aunque alfabéticamente venga antes
+        AñoAcademico.objects.create(año_academico="2023-24")
 
-        # Si tu implementación actual devuelve un valor por defecto específico
-        # cuando no hay módulos, ajusta esta prueba según corresponda
-        try:
-            año = get_año_academico_actual()
-            # Verifica que el valor devuelto es del formato YYYY-YY
-            self.assertRegex(año, r"^\d{4}-\d{2}$")
-        except Exception as e:
-            self.fail(f"La función falló con la excepción: {e}")
+        # Llamar a la función
+        resultado = get_año_academico_actual()
+
+        # Verificar que devuelve el año con el ID más alto, no el más reciente alfabéticamente
+        self.assertEqual(resultado, "2025-26")
+
+    def test_tiempo_de_cache_correcto(self):
+        """Prueba que el tiempo de caché se establece correctamente"""
+        # Mock de la función cache.set para capturar sus argumentos
+        with patch("seguimientos.utils.cache.set") as mock_cache_set:
+            AñoAcademico.objects.create(año_academico="2023-24")
+
+            # Llamar a la función
+            get_año_academico_actual()
+
+            # Verificar que cache.set fue llamado con el tiempo correcto (86400 segundos)
+            mock_cache_set.assert_called_once()
+            args, kwargs = mock_cache_set.call_args
+            self.assertEqual(args[0], "año_academico_actual")  # Clave
+            self.assertEqual(args[2], 86400)  # Tiempo en segundos (24 horas)
+
+    def test_sin_años_academicos_y_sin_datetime(self):
+        """Prueba un escenario de error donde no hay años académicos y datetime falla"""
+        with patch("seguimientos.utils.datetime") as mock_datetime:
+            # Simular un error al acceder a datetime
+            mock_datetime.now.side_effect = Exception("Error simulado en datetime")
+
+            # La función debería manejar este error graciosamente
+            with self.assertRaises(Exception) as context:
+                get_año_academico_actual()
+
+            # Verificar que el error se propaga correctamente
+            self.assertTrue("Error simulado en datetime" in str(context.exception))
