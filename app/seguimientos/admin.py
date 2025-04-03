@@ -71,7 +71,7 @@ class AñoAcademicoAdmin(admin.ModelAdmin):
         """Añade un botón para clonar en cada fila"""
         url = reverse("admin:clonar_opciones", args=[obj.año_academico])
         return format_html(
-            '<a class="btn btn-primary btn-sm" href="{}" style="color: white;">Clonar</a>',
+            '<a class="btn btn-primary btn-sm" href="{}">Clonar</a>',
             url,
         )
 
@@ -104,7 +104,7 @@ class AñoAcademicoAdmin(admin.ModelAdmin):
                 "title": f"Clonar año académico: {año_academico}",
                 **self.admin_site.each_context(request),
             }
-            return render(request, "admin/clonar_opciones.html", context)
+            return render(request, "admin/clonar_año.html", context)
         except AñoAcademico.DoesNotExist:
             self.message_user(request, "Año académico no encontrado", level="error")
             return HttpResponseRedirect(
@@ -277,7 +277,7 @@ class UnidadDeTrabajoInline(admin.TabularInline):
 @admin.register(Grupo)
 class GrupoAdmin(admin.ModelAdmin):
     list_display = ["nombre", "ciclo", "curso"]
-    list_filter = ["ciclo", "curso"]
+    list_filter = ["ciclo__año_academico", "ciclo", "curso"]
     search_fields = ["nombre", "ciclo__nombre"]
 
 
@@ -289,7 +289,11 @@ class ModuloAdmin(admin.ModelAdmin):
         "año_academico",
         "ciclo",
     ]
-    list_filter = ["ciclo__año_academico", "curso", "ciclo"]
+    list_filter = [
+        "ciclo__año_academico",
+        "ciclo",
+        "curso",
+    ]
     search_fields = ["nombre", "ciclo__nombre", "ciclo__año_academico"]
     inlines = [UnidadDeTrabajoInline, DocenciaInline]
 
@@ -415,6 +419,7 @@ class SeguimientoResource(resources.ModelResource):
             "nombre_modulo",
             "grupo",
             "mes",
+            "evaluacion",
             "temario_actual",
             "temario_actual",
             "ultimo_contenido_impartido",
@@ -477,6 +482,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
                     "docencia",
                     "mes",
                     "temario_actual",
+                    "evaluacion",
                     "ultimo_contenido_impartido",
                 )
             },
