@@ -49,5 +49,6 @@ jobs:
       - name: Run tests
         run: |
           cd app
+          export LC_ALL=C.UTF-8
           pipenv run python manage.py migrate
           pipenv run python manage.py test
