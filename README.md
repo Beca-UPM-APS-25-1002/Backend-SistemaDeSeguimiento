@@ -16,7 +16,7 @@
     - [Seguimientos `/seguimientos/`](#seguimientos-seguimientos)
       - [Listado `GET`](#listado-get)
       - [Detalle `POST, PUT, PATCH, GET` `/<pk>/`](#detalle-post-put-patch-get-pk)
-    - [WIP](#wip)
+  - [Enviar recordatorios `POST` - `/enviar-recordatorios/`](#enviar-recordatorios-post---enviar-recordatorios)
 
 Backend de la aplicación de seguimiento
 
@@ -310,6 +310,24 @@ Devuelve:
 }
 ```
 
-### WIP
+## Enviar recordatorios `POST` - `/enviar-recordatorios/`
 
-- `/enviar-recordatorio/` Envia un recordatorio por email a todas las docencias que se incluyan en el cuerpo de la petición
+Envia un recordatorio por email a todas las docencias que se incluyan en el cuerpo de la petición
+
+```json
+"docencias":[1,4,5],
+"mes": 4
+```
+
+Devuelve
+
+```json
+{
+  "status": "success",
+  "detail": "Se enviaron 2 recordatorios de seguimiento",
+  "emails_enviados": 2,
+  "total_profesores": 2,
+  "profesores_no_activos": [],
+  "docencias_no_encontradas": []
+}
+```

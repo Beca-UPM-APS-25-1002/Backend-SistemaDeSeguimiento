@@ -9,7 +9,6 @@ from seguimientos.models import (
     Grupo,
     Modulo,
     Profesor,
-    Seguimiento,
     UnidadDeTrabajo,
 )
 

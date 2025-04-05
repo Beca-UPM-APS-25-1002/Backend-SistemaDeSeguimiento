@@ -18,6 +18,7 @@ django-jazzmin = "*"
 [dev-packages]
 ruff = "*"
 ipython = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.13"

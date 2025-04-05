@@ -105,7 +105,7 @@ class GetAñoAcademicoActualTests(TestCase):
 
             # Verificar que cache.set fue llamado con el tiempo correcto (86400 segundos)
             mock_cache_set.assert_called_once()
-            args, kwargs = mock_cache_set.call_args
+            args, _ = mock_cache_set.call_args
             self.assertEqual(args[0], "año_academico_actual")  # Clave
             self.assertEqual(args[2], 86400)  # Tiempo en segundos (24 horas)
 

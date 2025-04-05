@@ -73,13 +73,12 @@ class SeguimientoSerializer(serializers.ModelSerializer):
         docencia = data["docencia"]
         temario_actual = data["temario_actual"]
         mes = data["mes"]
-        if temario_actual and docencia:
-            if temario_actual.modulo != docencia.modulo:
-                raise serializers.ValidationError(
-                    {
-                        "temario_actual": "El temario alcanzado debe pertenecer al módulo de la docencia."
-                    }
-                )
+        if temario_actual and docencia and temario_actual.modulo != docencia.modulo:
+            raise serializers.ValidationError(
+                {
+                    "temario_actual": "El temario alcanzado debe pertenecer al módulo de la docencia."
+                }
+            )
         if "request" not in self.context:
             return data
         request = self.context["request"]
