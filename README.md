@@ -16,7 +16,7 @@
     - [Seguimientos `/seguimientos/`](#seguimientos-seguimientos)
       - [Listado `GET`](#listado-get)
       - [Detalle `POST, PUT, PATCH, GET` `/<pk>/`](#detalle-post-put-patch-get-pk)
-  - [Enviar recordatorios `POST` - `/enviar-recordatorios/`](#enviar-recordatorios-post---enviar-recordatorios)
+    - [Enviar recordatorios `POST` - `/enviar-recordatorios/`](#enviar-recordatorios-post---enviar-recordatorios)
 
 Backend de la aplicación de seguimiento
 
@@ -310,7 +310,7 @@ Devuelve:
 }
 ```
 
-## Enviar recordatorios `POST` - `/enviar-recordatorios/`
+### Enviar recordatorios `POST` - `/enviar-recordatorios/`
 
 Envia un recordatorio por email a todas las docencias que se incluyan en el cuerpo de la petición
 
