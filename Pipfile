@@ -9,8 +9,16 @@ psycopg = {extras = ["pool", "binary"], version = "*"}
 markdown = "*"
 django-filter = "*"
 djangorestframework = "*"
+djoser = "*"
+django-import-export = {extras = ["xlsx"], version = "*"}
+django-autocomplete-light = "*"
+django-extensions = "*"
+django-jazzmin = "*"
 
 [dev-packages]
+ruff = "*"
+ipython = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.13"
