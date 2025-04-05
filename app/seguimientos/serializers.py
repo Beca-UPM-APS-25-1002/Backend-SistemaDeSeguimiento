@@ -9,7 +9,6 @@ from .models import (
     AñoAcademico,
     Ciclo,
 )
-import re
 
 
 class AñoAcademicoSerializer(serializers.ModelSerializer):
@@ -112,7 +111,7 @@ class SeguimientoSerializer(serializers.ModelSerializer):
 
 
 class RecordatorioSerializer(serializers.Serializer):
-    docencia_ids = serializers.ListField(
+    docencias = serializers.ListField(
         child=serializers.IntegerField(min_value=1),
         required=True,
         help_text="Lista de IDs de docencias para las que se enviará el recordatorio",
@@ -123,12 +122,6 @@ class RecordatorioSerializer(serializers.Serializer):
         required=True,
         help_text="Mes para el que falta el seguimiento (1-12)",
     )
-    año_academico = serializers.CharField(
-        required=True, help_text="Año académico del seguimiento (ej: '2024-2025')"
-    )
-
-    def validate_año_academico(self, value):
-        return bool(re.search(r"^\d{4}-\d{2}$", value))
 
     def validate_docencia_ids(self, value):
         if not value:

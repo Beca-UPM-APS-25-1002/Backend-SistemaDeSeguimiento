@@ -5,7 +5,7 @@
     - [Login - POST `/token/login/`](#login---post-tokenlogin)
     - [Login - POST `/token/logout/`](#login---post-tokenlogout)
   - [API `/api/`](#api-api)
-    - [Año Academico Actual `GET` `/current-year/`](#año-academico-actual-get-current-year)
+    - [Año Academico Actual `GET` `/year-actual/`](#año-academico-actual-get-year-actual)
     - [Docencias `/docencias/`](#docencias-docencias)
       - [Listado](#listado)
     - [Módulos `/modulos/`](#módulos-modulos)
@@ -79,7 +79,7 @@ Se invalida el token
 
 Necesita autenticación en todos los endpoints
 
-### Año Academico Actual `GET` `/current-year/`
+### Año Academico Actual `GET` `/year-actual/`
 
 ```json
 {

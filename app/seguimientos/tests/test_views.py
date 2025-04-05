@@ -13,6 +13,9 @@ from seguimientos.models import (
     Seguimiento,
     UnidadDeTrabajo,
 )
+from django.core import mail
+from django.conf import settings
+import calendar
 
 
 class ModuloViewSetTestCase(APITestCase):
@@ -496,3 +499,204 @@ class SeguimientoViewSetTests(APITestCase):
 
         # Verificar que se permite el acceso
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class EnviarRecordatorioSeguimientoViewTests(TestCase):
+    """Tests for the email reminder functionality for follow-ups."""
+
+    def setUp(self):
+        """Set up test data."""
+        # Create admin user
+        self.admin_user = Profesor.objects.create_superuser(
+            nombre="admin", email="admin@example.com", password="admin123"
+        )
+
+        # Create regular user (for permission testing)
+        self.user = Profesor.objects.create_user(
+            nombre="user", email="user@example.com", password="user123"
+        )
+
+        # Create test professors
+        self.profesor_activo = Profesor.objects.create(
+            nombre="Profesor Activo",
+            email="profesor.activo@example.com",
+            activo=True,
+            is_active=True,
+        )
+
+        self.profesor_inactivo = Profesor.objects.create(
+            nombre="Profesor Inactivo",
+            email="profesor.inactivo@example.com",
+            activo=False,
+            is_active=True,
+        )
+        self.year = AñoAcademico.objects.create(año_academico="2023-24")
+        self.ciclo = Ciclo.objects.create(año_academico=self.year, nombre="Ciclo 1")
+        # Create test modules and groups
+        self.modulo1 = Modulo.objects.create(
+            nombre="Módulo 1", ciclo=self.ciclo, curso=2
+        )
+        self.modulo2 = Modulo.objects.create(
+            nombre="Módulo 2", ciclo=self.ciclo, curso=2
+        )
+
+        self.grupo1 = Grupo.objects.create(nombre="Grupo A", ciclo=self.ciclo, curso=2)
+        self.grupo2 = Grupo.objects.create(nombre="Grupo B", ciclo=self.ciclo, curso=2)
+
+        # Create test docencias
+        self.docencia1 = Docencia.objects.create(
+            profesor=self.profesor_activo, modulo=self.modulo1, grupo=self.grupo1
+        )
+
+        self.docencia2 = Docencia.objects.create(
+            profesor=self.profesor_activo, modulo=self.modulo2, grupo=self.grupo2
+        )
+
+        self.docencia3 = Docencia.objects.create(
+            profesor=self.profesor_inactivo, modulo=self.modulo1, grupo=self.grupo2
+        )
+
+        # Set up API client
+        self.client = APIClient()
+        self.url = reverse("enviar-recordatorios")
+
+        # Test data
+        self.valid_payload = {
+            "docencias": [self.docencia1.id, self.docencia2.id],
+            "mes": 3,  # March
+            "año_academico": "2025",
+        }
+
+        # Original settings backup
+        self.original_frontend_url = getattr(
+            settings, "FRONTEND_URL", "http://default-frontend.com"
+        )
+        settings.FRONTEND_URL = "http://test-frontend.com"
+
+    def tearDown(self):
+        """Clean up after tests."""
+        # Restore settings
+        settings.FRONTEND_URL = self.original_frontend_url
+
+    def test_authentication_required(self):
+        """Test that authentication is required."""
+        response = self.client.post(self.url, self.valid_payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_admin_permission_required(self):
+        """Test that admin permission is required."""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, self.valid_payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_invalid_data(self):
+        """Test validation of invalid input data."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        # Missing required fields
+        invalid_payload = {"docencias": [self.docencia1.id]}
+        response = self.client.post(self.url, invalid_payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Invalid month
+        invalid_payload = {
+            "docencias": [self.docencia1.id],
+            "mes": 13,  # Invalid month
+            "año_academico": "2025",
+        }
+        response = self.client.post(self.url, invalid_payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_email_sending(self):
+        """Test successful sending of reminder emails."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        # Clear the mail outbox
+        mail.outbox = []
+
+        response = self.client.post(self.url, self.valid_payload, format="json")
+
+        # Check response
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "success")
+        self.assertEqual(response.data["emails_enviados"], 1)
+        self.assertEqual(response.data["total_profesores"], 1)
+        self.assertEqual(len(response.data["profesores_no_activos"]), 0)
+        self.assertEqual(len(response.data["docencias_no_encontradas"]), 0)
+
+        # Check email was sent
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+
+        # Verify email content
+        self.assertIn(
+            f"Recordatorio de seguimiento pendiente - {calendar.month_name[3].capitalize()}",
+            email.subject,
+        )
+        self.assertIn("Estimado/a Profesor Activo", email.body)
+        self.assertIn("Módulo 1", email.body)
+        self.assertIn("Módulo 2", email.body)
+        self.assertIn("Grupo A", email.body)
+        self.assertIn("Grupo B", email.body)
+        self.assertIn(settings.FRONTEND_URL, email.body)
+        self.assertEqual(email.to, ["profesor.activo@example.com"])
+
+    def test_inactive_profesor(self):
+        """Test that emails are not sent to inactive professors."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        # Clear the mail outbox
+        mail.outbox = []
+
+        payload = {"docencias": [self.docencia3.id], "mes": 3, "año_academico": "2025"}
+
+        response = self.client.post(self.url, payload, format="json")
+
+        # Check response
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["emails_enviados"], 0)
+        self.assertEqual(len(response.data["profesores_no_activos"]), 1)
+
+        # Check no email was sent
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_nonexistent_docencia(self):
+        """Test handling of non-existent docencia IDs."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        payload = {
+            "docencias": [9999],  # Non-existent ID
+            "mes": 3,
+            "año_academico": "2025",
+        }
+
+        response = self.client.post(self.url, payload, format="json")
+
+        # Check response
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["emails_enviados"], 0)
+        self.assertEqual(len(response.data["docencias_no_encontradas"]), 1)
+        self.assertEqual(response.data["docencias_no_encontradas"][0], 9999)
+
+    def test_mixed_valid_invalid_docencias(self):
+        """Test with a mix of valid and invalid docencia IDs."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        # Clear the mail outbox
+        mail.outbox = []
+
+        payload = {
+            "docencias": [self.docencia1.id, 9999],
+            "mes": 3,
+            "año_academico": "2025",
+        }
+
+        response = self.client.post(self.url, payload, format="json")
+
+        # Check response
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["emails_enviados"], 1)
+        self.assertEqual(len(response.data["docencias_no_encontradas"]), 1)
+
+        # Check email was sent for valid docencia
+        self.assertEqual(len(mail.outbox), 1)

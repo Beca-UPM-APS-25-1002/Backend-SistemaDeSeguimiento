@@ -148,7 +148,10 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
     ),
 }
-
+# Email
+EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+EMAIL_FILE_PATH = "../tmp/app-messages"  # change this to a proper location
+# Djoser
 DJOSER = {
     "PASSWORD_RESET_CONFIRM_URL": "#/password/reset/confirm/{uid}/{token}",
     "USERNAME_RESET_CONFIRM_URL": "#/username/reset/confirm/{uid}/{token}",
@@ -156,6 +159,7 @@ DJOSER = {
     "SERIALIZERS": {},
 }
 
+# Jazzmin
 JAZZMIN_SETTINGS = {
     "site_title": "Admin Seguimientos",
     "site_header": "Seguimientos",

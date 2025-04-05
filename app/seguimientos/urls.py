@@ -13,5 +13,10 @@ urlpatterns = [
         views.SeguimientosFaltantesView.as_view(),
         name="seguimientos-faltantes",
     ),
-    path("current-year/", views.CurrentAcademicYearView.as_view(), name="current-year"),
+    path("year-actual/", views.CurrentAcademicYearView.as_view(), name="year-actual"),
+    path(
+        "enviar-recordatorios/",
+        views.EnviarRecordatorioSeguimientoView.as_view(),
+        name="enviar-recordatorios",
+    ),
 ]

@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.mail import send_mail
 from django.conf import settings
 from .serializers import RecordatorioSerializer
+import calendar
 from .serializers import (
     SeguimientoSerializer,
     ModuloSerializer,
@@ -155,7 +156,7 @@ class EnviarRecordatorioSeguimientoView(APIView):
     Vista para enviar recordatorios de seguimiento a profesores.
 
     Recibe un JSON con:
-    - docencia_ids: lista de IDs de docencias
+    - docencias: lista de IDs de docencias
     - mes: mes para el cual falta el seguimiento
     - año_academico: año académico del seguimiento
     """
@@ -168,20 +169,17 @@ class EnviarRecordatorioSeguimientoView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        docencia_ids = serializer.validated_data["docencia_ids"]
+        docencias = serializer.validated_data["docencias"]
         mes = serializer.validated_data["mes"]
-        año_academico = serializer.validated_data["año_academico"]
 
         # Diccionario para agrupar docencias por profesor
         profesores_docencias = {}
         docencias_no_encontradas = []
         profesores_no_activos = []
         # Recopilar todas las docencias agrupadas por profesor
-        for docencia_id in docencia_ids:
+        for docencia_id in docencias:
             try:
-                docencia = Docencia.objects.select_related(
-                    "profesor", "modulo", "grupo"
-                ).get(id=docencia_id, modulo__ciclo__año_academico=año_academico)
+                docencia = Docencia.objects.get(id=docencia_id)
 
                 if docencia.profesor.id not in profesores_docencias:
                     profesores_docencias[docencia.profesor.id] = {
@@ -196,20 +194,6 @@ class EnviarRecordatorioSeguimientoView(APIView):
 
         # Enviar emails personalizados a cada profesor
         emails_enviados = 0
-        nombres_meses = {
-            1: "enero",
-            2: "febrero",
-            3: "marzo",
-            4: "abril",
-            5: "mayo",
-            6: "junio",
-            7: "julio",
-            8: "agosto",
-            9: "septiembre",
-            10: "octubre",
-            11: "noviembre",
-            12: "diciembre",
-        }
 
         for profesor_data in profesores_docencias.values():
             profesor = profesor_data["profesor"]
@@ -219,35 +203,35 @@ class EnviarRecordatorioSeguimientoView(APIView):
                 profesores_no_activos.append(profesor)
                 continue
 
-            # Construir mensaje personalizado
-            mensaje = f"""
-            Estimado/a {profesor.nombre},
-            
-            Le recordamos que tiene pendiente realizar el seguimiento del mes de {nombres_meses[mes]} para las siguientes docencias:
-            
-            """
+            mensaje = "Estimado/a " + profesor.nombre + ",\n\n"
+            mensaje += (
+                "Le recordamos que tiene pendiente realizar el seguimiento del mes de "
+                + calendar.month_name[mes].capitalize()
+                + " para las siguientes docencias:\n\n"
+            )
 
             for docencia in docencias:
                 mensaje += (
-                    f"- {docencia.modulo.nombre} del grupo {docencia.grupo.nombre}\n"
+                    "- "
+                    + docencia.modulo.nombre
+                    + " para el grupo "
+                    + docencia.grupo.nombre
+                    + "\n"
                 )
 
             # URL al frontend (configurar en settings.py)
-            frontend_url = f"{settings.FRONTEND_URL}"
+            frontend_url = settings.FRONTEND_URL
 
-            mensaje += f"""
-            
-            Puede completar los seguimientos pendientes haciendo clic en el siguiente enlace:
-            {frontend_url}
-            
-            Gracias por su colaboración.
-            
-            Este es un correo automático, por favor no responda a esta dirección.
-            """
+            mensaje += "\nPuede completar los seguimientos pendientes haciendo clic en el siguiente enlace:\n"
+            mensaje += frontend_url + "\n\n"
+            mensaje += "Gracias por su colaboración.\n\n"
+            mensaje += (
+                "Este es un correo automático, por favor no responda a esta dirección."
+            )
 
             try:
                 send_mail(
-                    subject=f"Recordatorio de seguimiento pendiente - {nombres_meses[mes]} {año_academico}",
+                    subject=f"Recordatorio de seguimiento pendiente - {calendar.month_name[mes].capitalize()}",
                     message=mensaje,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[profesor.email],
@@ -262,7 +246,9 @@ class EnviarRecordatorioSeguimientoView(APIView):
                 "detail": f"Se enviaron {emails_enviados} recordatorios de seguimiento",
                 "emails_enviados": emails_enviados,
                 "total_profesores": len(profesores_docencias),
-                "profesores_no_activos": profesores_no_activos,
+                "profesores_no_activos": [
+                    profesor.email for profesor in profesores_no_activos
+                ],
                 "docencias_no_encontradas": docencias_no_encontradas,
             },
             status=status.HTTP_200_OK,

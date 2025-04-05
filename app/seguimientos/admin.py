@@ -199,10 +199,8 @@ class AñoAcademicoAdmin(admin.ModelAdmin):
         ciclos_mapeados = self.clonar_ciclos(año_original, año_nuevo)
         modulos_mapeados = {}
         grupos_mapeados = {}
-        print("llega")
         # Clonar módulos
         modulos_originales = Modulo.objects.filter(ciclo__año_academico=año_original)
-        print(modulos_originales)
         for modulo in modulos_originales:
             nuevo_modulo = Modulo.objects.create(
                 nombre=modulo.nombre,
