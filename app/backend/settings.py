@@ -156,7 +156,10 @@ DJOSER = {
     "PASSWORD_RESET_CONFIRM_URL": "#/password/reset/confirm/{uid}/{token}",
     "USERNAME_RESET_CONFIRM_URL": "#/username/reset/confirm/{uid}/{token}",
     "SEND_ACTIVATION_EMAIL": False,
-    "SERIALIZERS": {},
+    "SERIALIZERS": {
+        "current_user": "seguimientos.serializers.ProfesorSerializer",
+        "user": "seguimientos.serializers.ProfesorSerializer",
+    },
 }
 
 # Jazzmin

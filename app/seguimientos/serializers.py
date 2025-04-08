@@ -46,7 +46,7 @@ class GrupoSerializer(serializers.ModelSerializer):
 class ProfesorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profesor
-        fields = ["id", "nombre", "email", "activo"]
+        fields = ["id", "nombre", "email", "activo", "is_admin"]
 
 
 class DocenciaSerializer(serializers.ModelSerializer):
