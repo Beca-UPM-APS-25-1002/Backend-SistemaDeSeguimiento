@@ -462,13 +462,16 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
     list_filter = [
         "estado",
         "cumple_programacion",
-        "mes",
         "docencia__modulo__ciclo__año_academico",
+        "mes",
+        "docencia__modulo",
+        "docencia__profesor",
     ]
     search_fields = [
         "docencia__profesor__nombre",
         "docencia__modulo__nombre",
         "docencia__grupo__nombre",
+        "docencia__modulo__ciclo__año_academico",
     ]
     autocomplete_fields = ["docencia", "temario_actual"]
     resource_classes = [SeguimientoResource]
