@@ -1,5 +1,5 @@
 import calendar
-
+from django.contrib.admin import SimpleListFilter
 from dal import autocomplete
 from django import forms
 from django.contrib import admin
@@ -459,12 +459,40 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         "cumple_programacion",
         "temario_actual",
     ]
+
+    # Custom filter for Modulo that depends on año_academico
+    class ModuloFilter(SimpleListFilter):
+        title = "Módulo"
+        parameter_name = "docencia__modulo"
+
+        def lookups(self, request, model_admin):
+            # Get the current año_academico filter value from the request
+            print(request)
+            año_academico = request.GET.get(
+                "docencia__modulo__ciclo__año_academico__año_academico__exact", None
+            )
+
+            # Filter modules based on the selected año_academico
+            if año_academico:
+                modulos = Modulo.objects.filter(
+                    ciclo__año_academico=año_academico
+                ).distinct()
+            else:
+                modulos = Modulo.objects.all().distinct()
+
+            return [(modulo.id, modulo) for modulo in modulos]
+
+        def queryset(self, request, queryset):
+            if self.value():
+                return queryset.filter(docencia__modulo=self.value())
+            return queryset
+
     list_filter = [
         "estado",
         "cumple_programacion",
         "docencia__modulo__ciclo__año_academico",
         "mes",
-        "docencia__modulo",
+        ModuloFilter,
         "docencia__profesor",
     ]
     search_fields = [

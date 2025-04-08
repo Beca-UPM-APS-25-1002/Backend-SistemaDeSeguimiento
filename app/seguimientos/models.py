@@ -67,7 +67,7 @@ class Modulo(models.Model):
         return self.ciclo.año_academico
 
     def __str__(self):
-        return f"{self.nombre} - {self.ciclo} - {self.año_academico}"
+        return f"{self.nombre} - {self.ciclo}"
 
 
 class UnidadDeTrabajo(models.Model):
