@@ -245,7 +245,7 @@ Puede tener el modificador opcional `?all` para mostrar todos los seguimientos f
 
 ### Seguimientos `/seguimientos/`
 
-#### Listado `GET`
+#### Listado `POST, GET`
 
 Consigue los seguimientos del profesor autenticado. Se puede filtrar con los parametros tal que `?year=2024-25` y `?mes=4`. Filtra por defecto por el año actual
 
@@ -288,7 +288,7 @@ Consigue los seguimientos del profesor autenticado. Se puede filtrar con los par
 ]
 ```
 
-#### Detalle `POST, PUT, PATCH, GET` `/<pk>/`
+#### Detalle `PUT, PATCH, GET` `/<pk>/`
 
 Recibe:
 
