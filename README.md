@@ -251,40 +251,76 @@ Consigue los seguimientos del profesor autenticado. Se puede filtrar con los par
 
 ```json
 [
-  {
-    "id": 1,
-    "profesor": {
-      "id": 2,
-      "nombre": "Émilie Jardin",
-      "email": "a@profes.es"
-    },
-    "año_academico": "2025-26",
-    "ultimo_contenido_impartido": "Integracion por partes - 4",
-    "estado": "ADELANTADO",
-    "justificacion_estado": "",
-    "cumple_programacion": true,
-    "justificacion_cumple_programacion": "",
-    "mes": 5,
-    "temario_actual": 1,
-    "docencia": 1
-  },
-  {
-    "id": 2,
-    "profesor": {
-      "id": 2,
-      "nombre": "Émilie Jardin",
-      "email": "a@profes.es"
-    },
-    "año_academico": "2025-26",
-    "ultimo_contenido_impartido": "Introduccion",
-    "estado": "AL_DIA",
-    "justificacion_estado": "",
-    "cumple_programacion": true,
-    "justificacion_cumple_programacion": "",
-    "mes": 7,
-    "temario_actual": 2,
-    "docencia": 1
-  }
+	{
+		"id": 44,
+		"profesor": {
+			"id": 95,
+			"nombre": "Emilie",
+			"email": "b@profes.es",
+			"activo": true,
+			"is_admin": false
+		},
+		"modulo": {
+			"id": 76,
+			"ciclo": {
+				"id": 53,
+				"nombre": "DAW",
+				"año_academico": "2025-26"
+			},
+			"nombre": "Tecnologias Web",
+			"curso": 1
+		},
+		"grupo": {
+			"id": 59,
+			"nombre": "DAW1M",
+			"curso": 1,
+			"ciclo": 53
+		},
+		"ultimo_contenido_impartido": "Operadores",
+		"estado": "AL_DIA",
+		"justificacion_estado": "",
+		"cumple_programacion": true,
+		"justificacion_cumple_programacion": "",
+		"mes": 4,
+		"evaluacion": "PRIMERA",
+		"temario_actual": 78,
+		"docencia": 84
+	},
+	{
+		"id": 45,
+		"profesor": {
+			"id": 1,
+			"nombre": "Adrian",
+			"email": "adrianpuyetm@gmail.com",
+			"activo": true,
+			"is_admin": true
+		},
+		"modulo": {
+			"id": 76,
+			"ciclo": {
+				"id": 53,
+				"nombre": "DAW",
+				"año_academico": "2025-26"
+			},
+			"nombre": "Tecnologias Web",
+			"curso": 1
+		},
+		"grupo": {
+			"id": 60,
+			"nombre": "DAW1T",
+			"curso": 1,
+			"ciclo": 53
+		},
+		"ultimo_contenido_impartido": "Lambdas",
+		"estado": "AL_DIA",
+		"justificacion_estado": "",
+		"cumple_programacion": true,
+		"justificacion_cumple_programacion": "",
+		"mes": 5,
+		"evaluacion": "SEGUNDA",
+		"temario_actual": 78,
+		"docencia": 86
+	}
 ]
 ```
 
@@ -301,6 +337,7 @@ Recibe:
   "cumple_programacion": true,
   "justificacion_cumple_programacion": "justificiacion",
   "mes": 5,
+  "evaluacion": "SEGUNDA", //(PRIMERA, TERCERA)
   "temario_actual": 1,
   "docencia": 1
 }
