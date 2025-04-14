@@ -224,6 +224,14 @@ class Seguimiento(models.Model):
     def profesor(self):
         return self.docencia.profesor
 
+    @cached_property
+    def modulo(self):
+        return self.docencia.modulo
+
+    @cached_property
+    def grupo(self):
+        return self.docencia.grupo
+
     def __str__(self):
         return f"Seguimiento {self.docencia} - Mes {self.mes}"
 

@@ -187,7 +187,6 @@ class SeguimientosFaltantesAnualView(generics.ListAPIView):
                 resultados_por_mes[num_mes] = list(
                     docencias_sin_seguimiento.values_list("id", flat=True)
                 )
-
         return Response(resultados_por_mes)
 
 

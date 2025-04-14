@@ -14,7 +14,7 @@ urlpatterns = [
         name="seguimientos-faltantes",
     ),
     path(
-        "api/seguimientos-faltantes-anual/<slug:año_academico>/",
+        "seguimientos-faltantes-anual/<slug:año_academico>/",
         views.SeguimientosFaltantesAnualView.as_view(),
         name="seguimientos-faltantes-anual",
     ),

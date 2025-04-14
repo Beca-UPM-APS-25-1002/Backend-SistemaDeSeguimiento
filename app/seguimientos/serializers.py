@@ -61,11 +61,13 @@ class DocenciaSerializer(serializers.ModelSerializer):
 
 class SeguimientoSerializer(serializers.ModelSerializer):
     profesor = ProfesorSerializer(required=False)
+    modulo = ModuloSerializer(required=False)
+    grupo = GrupoSerializer(required=False)
 
     class Meta:
         model = Seguimiento
         fields = "__all__"
-        read_only_fields = ["profesor"]
+        read_only_fields = ["profesor", "modulo", "grupo"]
 
     def validate(self, data):
         # Comprobar que el temario sea del modulo de la docencia
