@@ -140,6 +140,57 @@ class SeguimientosFaltantesView(generics.ListAPIView):
         return docencias_sin_seguimiento.filter(profesor=user)
 
 
+class SeguimientosFaltantesAnualView(generics.ListAPIView):
+    """
+    Vista que devuelve la lista de docencias sin seguimientos para un año académico completo,
+    organizadas por mes. El resultado es un diccionario donde las claves son los nombres de
+    los meses y los valores son listas de IDs de docencias sin seguimientos.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        año_academico = self.kwargs["año_academico"]
+        user = self.request.user
+
+        # Diccionario para almacenar los resultados por mes
+        resultados_por_mes = {}
+
+        # Paso 1: Filtrar las instancias de Docencia por año académico
+        docencias = Docencia.objects.filter(modulo__ciclo__año_academico=año_academico)
+
+        # Si no es administrador o no se solicitan todas, filtrar por profesor
+        if not (user.is_admin and self.request.query_params.get("all") is not None):
+            docencias = docencias.filter(profesor=user)
+
+        # Iterar sobre cada mes
+        for num_mes in range(1, 13):
+            # Paso 2: Obtener todos los Seguimiento para el mes y año académico dados
+            seguimientos = Seguimiento.objects.filter(
+                mes=num_mes, docencia__modulo__ciclo__año_academico=año_academico
+            )
+
+            # Paso 3: Excluir las Docencia que ya tienen un Seguimiento para el mes dado
+            docencias_con_seguimiento = seguimientos.values_list("docencia", flat=True)
+            docencias_sin_seguimiento = docencias.exclude(
+                id__in=docencias_con_seguimiento
+            )
+
+            # Paso 4: Excluir las Docencia donde otra Docencia con el mismo grupo y módulo ya tiene un Seguimiento
+            for seguimiento in seguimientos:
+                docencias_sin_seguimiento = docencias_sin_seguimiento.exclude(
+                    grupo=seguimiento.docencia.grupo, modulo=seguimiento.docencia.modulo
+                )
+
+            # Añadir los IDs de docencias sin seguimiento al resultado para este mes
+            if docencias_sin_seguimiento.exists():
+                resultados_por_mes[num_mes] = list(
+                    docencias_sin_seguimiento.values_list("id", flat=True)
+                )
+
+        return Response(resultados_por_mes)
+
+
 class CurrentAcademicYearView(APIView):
     permission_classes = [IsAuthenticated]
     allowed_methods = ["GET"]

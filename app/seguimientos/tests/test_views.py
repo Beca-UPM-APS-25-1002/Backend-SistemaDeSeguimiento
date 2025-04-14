@@ -700,3 +700,223 @@ class EnviarRecordatorioSeguimientoViewTests(TestCase):
 
         # Check email was sent for valid docencia
         self.assertEqual(len(mail.outbox), 1)
+
+
+class SeguimientosFaltantesAnualViewTests(APITestCase):
+    """
+    Suite de pruebas para el SeguimientosFaltantesAnualView.
+    Verifica que los profesores solo pueden acceder a sus docencias sin seguimiento
+    y que los administradores pueden ver todas con el parámetro 'all'.
+    """
+
+    def setUp(self):
+        """Configuración inicial de datos para las pruebas"""
+        self.year = AñoAcademico.objects.create(año_academico="2024-25")
+
+        # Crear ciclos
+        self.ciclo1 = Ciclo.objects.create(nombre="DAW", año_academico=self.year)
+        self.ciclo2 = Ciclo.objects.create(nombre="DAM", año_academico=self.year)
+
+        # Crear grupos
+        self.grupo1 = Grupo.objects.create(nombre="Grupo A", ciclo=self.ciclo1, curso=1)
+        self.grupo2 = Grupo.objects.create(nombre="Grupo B", ciclo=self.ciclo2, curso=1)
+
+        # Crear módulos
+        self.modulo1 = Modulo.objects.create(
+            nombre="Programación", curso=1, ciclo=self.ciclo1
+        )
+        self.modulo2 = Modulo.objects.create(
+            nombre="Bases de Datos",
+            curso=1,
+            ciclo=self.ciclo1,
+        )
+
+        # Crear unidades de temario
+        self.unidad1 = UnidadDeTrabajo.objects.create(
+            numero_tema=1, titulo="Introducción", modulo=self.modulo1
+        )
+        self.unidad2 = UnidadDeTrabajo.objects.create(
+            numero_tema=1, titulo="Introducción", modulo=self.modulo2
+        )
+
+        # Crear profesores
+        self.profesor1 = Profesor.objects.create_user(
+            email="profesor1@test.com", nombre="Profesor Uno", password="password123"
+        )
+        self.profesor2 = Profesor.objects.create_user(
+            email="profesor2@test.com", nombre="Profesor Dos", password="password123"
+        )
+        self.admin = Profesor.objects.create_user(
+            email="admin@test.com",
+            nombre="Administrador",
+            password="password123",
+            is_admin=True,
+        )
+
+        # Crear docencias
+        # Profesor 1 tiene docencia en Grupo A, Módulo Programación
+        self.docencia1 = Docencia.objects.create(
+            profesor=self.profesor1, grupo=self.grupo1, modulo=self.modulo1
+        )
+
+        # Profesor 2 tiene docencia en Grupo A, Módulo Bases de Datos
+        self.docencia2 = Docencia.objects.create(
+            profesor=self.profesor2, grupo=self.grupo1, modulo=self.modulo2
+        )
+
+        # Profesor 2 también tiene docencia en Grupo B, Módulo Programación
+        self.docencia3 = Docencia.objects.create(
+            profesor=self.profesor2, grupo=self.grupo2, modulo=self.modulo1
+        )
+
+        # Crear seguimientos solo para algunos meses
+        self.seguimiento1 = Seguimiento.objects.create(
+            temario_actual=self.unidad1,
+            ultimo_contenido_impartido="Variables y tipos de datos",
+            estado="AL_DIA",
+            mes=1,  # Enero
+            docencia=self.docencia1,
+            evaluacion="PRIMERA",
+        )
+
+        self.seguimiento2 = Seguimiento.objects.create(
+            temario_actual=self.unidad2,
+            ultimo_contenido_impartido="Modelo relacional",
+            estado="AL_DIA",
+            mes=3,  # Marzo
+            docencia=self.docencia2,
+            evaluacion="PRIMERA",
+        )
+
+        # Preparar el cliente API
+        self.client = APIClient()
+
+        # URL para la API de seguimientos faltantes anual
+        self.url = reverse("seguimientos-faltantes-anual", args=["2024-25"])
+
+    def test_unauthenticated_access(self):
+        """Prueba que los usuarios no autenticados no pueden acceder al endpoint"""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_profesor1_access(self):
+        """
+        Prueba que el profesor1 solo puede ver las docencias sin seguimiento que le pertenecen
+        """
+        self.client.force_authenticate(user=self.profesor1)
+        response = self.client.get(self.url)
+
+        # Verificar código de estado
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # El profesor1 solo tiene docencia1 y ya tiene seguimiento para enero (mes 1)
+        # Por lo tanto, debería ver febrero (mes 2), abril (mes 4) - diciembre (mes 12) como meses con seguimientos faltantes
+        expected_months = [2, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+        # Verificar que todos los meses esperados están en la respuesta (convertidos a strings por la serialización JSON)
+        for month in expected_months:
+            self.assertIn(month, response.data)
+
+        # Verificar que solo aparece su docencia (id=1) en todos los meses
+        for month in expected_months:
+            self.assertEqual(len(response.data[month]), 1)
+            self.assertEqual(response.data[month][0], self.docencia1.id)
+
+        # Verificar que enero (mes 1) no aparece (ya tiene seguimiento)
+        self.assertNotIn(1, response.data)
+
+    def test_profesor2_access(self):
+        """
+        Prueba que el profesor2 solo puede ver las docencias sin seguimiento que le pertenecen
+        """
+        self.client.force_authenticate(user=self.profesor2)
+        response = self.client.get(self.url)
+
+        # Verificar código de estado
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verificar que docencia2 aparece en todos los meses excepto marzo (mes 3)
+        expected_months = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+        for month in expected_months:
+            self.assertIn(month, response.data)
+            docencia_ids = response.data[month]
+            self.assertIn(self.docencia2.id, docencia_ids)
+
+        # Verificar que docencia3 aparece en todos los meses
+        for month in expected_months:
+            docencia_ids = response.data[month]
+            self.assertIn(self.docencia3.id, docencia_ids)
+
+        # Verificar que marzo (mes 3) no tiene docencia2 pero sí docencia3
+        self.assertIn(3, response.data)
+        self.assertEqual(len(response.data[3]), 1)
+        self.assertEqual(response.data[3][0], self.docencia3.id)
+
+    def test_admin_without_all_param(self):
+        """
+        Prueba que un administrador sin el parámetro 'all' solo ve sus propias docencias
+        """
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.url)
+
+        # Verificar código de estado
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verificar que el administrador no tiene docencias, por lo que no debe ver nada
+        self.assertEqual(response.data, {})
+
+    def test_admin_with_all_param(self):
+        """
+        Prueba que un administrador con el parámetro 'all' ve todas las docencias sin seguimiento
+        """
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(f"{self.url}?all")
+
+        # Verificar código de estado
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verificar que enero (mes 1) no tiene docencia1 (tiene seguimiento) pero sí docencia2 y docencia3
+        self.assertIn(1, response.data)
+        self.assertEqual(len(response.data[1]), 2)
+        self.assertIn(self.docencia2.id, response.data[1])
+        self.assertIn(self.docencia3.id, response.data[1])
+
+        # Verificar que marzo (mes 3) no tiene docencia2 (tiene seguimiento) pero sí docencia1 y docencia3
+        self.assertIn(3, response.data)
+        self.assertEqual(len(response.data[3]), 2)
+        self.assertIn(self.docencia1.id, response.data[3])
+        self.assertIn(self.docencia3.id, response.data[3])
+
+        # Verificar que febrero (mes 2) y abril (mes 4) - diciembre (mes 12) tienen todas las docencias
+        other_months = [2, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+        for month in other_months:
+            self.assertIn(month, response.data)
+            self.assertEqual(len(response.data[month]), 3)
+            self.assertIn(self.docencia1.id, response.data[month])
+            self.assertIn(self.docencia2.id, response.data[month])
+            self.assertIn(self.docencia3.id, response.data[month])
+
+    def test_non_admin_with_all_param(self):
+        """
+        Prueba que un profesor no administrador con el parámetro 'all' solo ve sus propias docencias
+        """
+        self.client.force_authenticate(user=self.profesor1)
+        response = self.client.get(f"{self.url}?all")
+
+        # Verificar código de estado
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verificar que sigue viendo solo sus docencias
+        expected_months = [2, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+        for month in expected_months:
+            self.assertIn(month, response.data)
+            self.assertEqual(len(response.data[month]), 1)
+            self.assertEqual(response.data[month][0], self.docencia1.id)
+
+        # No debe ver docencias de otros profesores
+        for month in expected_months:
+            self.assertNotIn(self.docencia2.id, response.data[month])
+            self.assertNotIn(self.docencia3.id, response.data[month])

@@ -13,6 +13,7 @@
       - [Detalle `/<pk>/`](#detalle-pk)
       - [Detalle Temario `/<pk>/temario/`](#detalle-temario-pktemario)
     - [Seguimientos faltantes `/seguimientos-faltantes/<slug:año_academico>/<int:mes>/`](#seguimientos-faltantes-seguimientos-faltantesslugaño_academicointmes)
+    - [Seguimientos faltantes anual `/seguimientos-faltantes-anual/<slug:año_academico>/`](#seguimientos-faltantes-anual-seguimientos-faltantes-anualslugaño_academico)
     - [Seguimientos `/seguimientos/`](#seguimientos-seguimientos)
       - [Listado `GET`](#listado-get)
       - [Detalle `POST, PUT, PATCH, GET` `/<pk>/`](#detalle-post-put-patch-get-pk)
@@ -223,6 +224,23 @@ Puede tener el modificador opcional `?all` para tener todos los seguimientos fal
     }
   }
 ]
+```
+
+### Seguimientos faltantes anual `/seguimientos-faltantes-anual/<slug:año_academico>/`
+
+Encuentra las docencias con seguimientos faltantes para un año académico completo (formato: 2024-25), organizadas por mes.
+Para cada mes, devuelve una lista con los IDs de las docencias que no tienen seguimiento.
+Por defecto, solo muestra los seguimientos faltantes del profesor autenticado.
+Puede tener el modificador opcional `?all` para mostrar todos los seguimientos faltantes, solo funciona para admins.
+
+```json
+{
+  "1": [2, 5, 8],
+  "2": [2, 5],
+  "3": [5, 8, 10],
+  "4": [2, 5, 8, 10],
+  "5": [5, 8]
+}
 ```
 
 ### Seguimientos `/seguimientos/`

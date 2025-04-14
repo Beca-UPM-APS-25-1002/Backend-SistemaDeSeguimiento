@@ -13,6 +13,11 @@ urlpatterns = [
         views.SeguimientosFaltantesView.as_view(),
         name="seguimientos-faltantes",
     ),
+    path(
+        "api/seguimientos-faltantes-anual/<slug:año_academico>/",
+        views.SeguimientosFaltantesAnualView.as_view(),
+        name="seguimientos-faltantes-anual",
+    ),
     path("year-actual/", views.CurrentAcademicYearView.as_view(), name="year-actual"),
     path(
         "enviar-recordatorios/",
