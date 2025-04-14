@@ -15,8 +15,8 @@
     - [Seguimientos faltantes `/seguimientos-faltantes/<slug:año_academico>/<int:mes>/`](#seguimientos-faltantes-seguimientos-faltantesslugaño_academicointmes)
     - [Seguimientos faltantes anual `/seguimientos-faltantes-anual/<slug:año_academico>/`](#seguimientos-faltantes-anual-seguimientos-faltantes-anualslugaño_academico)
     - [Seguimientos `/seguimientos/`](#seguimientos-seguimientos)
-      - [Listado `GET`](#listado-get)
-      - [Detalle `POST, PUT, PATCH, GET` `/<pk>/`](#detalle-post-put-patch-get-pk)
+      - [Listado `POST, GET`](#listado-post-get)
+      - [Detalle `PUT, PATCH, GET` `/<pk>/`](#detalle-post-put-patch-get-pk)
     - [Enviar recordatorios `POST` - `/enviar-recordatorios/`](#enviar-recordatorios-post---enviar-recordatorios)
 
 Backend de la aplicación de seguimiento
