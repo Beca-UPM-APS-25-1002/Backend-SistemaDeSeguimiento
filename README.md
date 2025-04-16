@@ -176,21 +176,18 @@ Lista de los modulos
     "id": 1,
     "numero_tema": 1,
     "titulo": "Integrales",
-    "impartido": true,
     "modulo": 3
   },
   {
     "id": 2,
     "numero_tema": 2,
     "titulo": "Ecuaciones diferenciales",
-    "impartido": false,
     "modulo": 3
   },
   {
     "id": 3,
     "numero_tema": 3,
     "titulo": "Teoria de lenguajes",
-    "impartido": false,
     "modulo": 3
   }
 ]
