@@ -1,4 +1,5 @@
 - [Setup del entorno de desarollo](#setup-del-entorno-de-desarollo)
+- [Setup del entorno de despliegue](#setup-del-entorno-de-despliegue)
 - [Endpoints](#endpoints)
   - [Autenticación - `/auth/`](#autenticación---auth)
     - [Registro en la app - POST `/users/`](#registro-en-la-app---post-users)
@@ -16,12 +17,10 @@
     - [Seguimientos faltantes anual `/seguimientos-faltantes-anual/<slug:año_academico>/`](#seguimientos-faltantes-anual-seguimientos-faltantes-anualslugaño_academico)
     - [Seguimientos `/seguimientos/`](#seguimientos-seguimientos)
       - [Listado `POST, GET`](#listado-post-get)
-      - [Detalle `PUT, PATCH, GET` `/<pk>/`](#detalle-post-put-patch-get-pk)
+      - [Detalle `PUT, PATCH, GET` `/<pk>/`](#detalle-put-patch-get-pk)
     - [Enviar recordatorios `POST` - `/enviar-recordatorios/`](#enviar-recordatorios-post---enviar-recordatorios)
 
 Backend de la aplicación de seguimiento
-
-- [Diagrama Entidad-Relación](https://dbdiagram.io/e/67cf0d1975d75cc84489350e/67d0147c75d75cc844a50b2c)
 
 # Setup del entorno de desarollo
 
@@ -30,6 +29,21 @@ Backend de la aplicación de seguimiento
 3. Instalar las dependencias `pipenv install`
 4. Añadir los ficheros estaticos `python manage.py collectstatic`
 5. Iniciar la aplicación `python manage.py runserver`
+
+# Setup del entorno de despliegue
+
+1. Variables de entorno
+
+```py
+SECRET_KEY="django-insecure-1seo&72qbf8$p6z2t&7m2%_mvnbslm$)g#wy4ix@bbruuwmug"
+DEBUG=False #False en producción
+FRONTEND_URL="http://localhost:5173" #URL de la applicación de frontend
+DB_NAME="seguimientos" #Datos de la base de datos postgresql
+DB_USER="postgres"
+DB_PASSWORD="1234"
+DB_HOST="localhost"
+DB_PORT="5432"
+```
 
 # Endpoints
 
@@ -248,76 +262,76 @@ Consigue los seguimientos del profesor autenticado. Se puede filtrar con los par
 
 ```json
 [
-	{
-		"id": 44,
-		"profesor": {
-			"id": 95,
-			"nombre": "Emilie",
-			"email": "b@profes.es",
-			"activo": true,
-			"is_admin": false
-		},
-		"modulo": {
-			"id": 76,
-			"ciclo": {
-				"id": 53,
-				"nombre": "DAW",
-				"año_academico": "2025-26"
-			},
-			"nombre": "Tecnologias Web",
-			"curso": 1
-		},
-		"grupo": {
-			"id": 59,
-			"nombre": "DAW1M",
-			"curso": 1,
-			"ciclo": 53
-		},
-		"ultimo_contenido_impartido": "Operadores",
-		"estado": "AL_DIA",
-		"justificacion_estado": "",
-		"cumple_programacion": true,
-		"justificacion_cumple_programacion": "",
-		"mes": 4,
-		"evaluacion": "PRIMERA",
-		"temario_actual": 78,
-		"docencia": 84
-	},
-	{
-		"id": 45,
-		"profesor": {
-			"id": 1,
-			"nombre": "Adrian",
-			"email": "adrianpuyetm@gmail.com",
-			"activo": true,
-			"is_admin": true
-		},
-		"modulo": {
-			"id": 76,
-			"ciclo": {
-				"id": 53,
-				"nombre": "DAW",
-				"año_academico": "2025-26"
-			},
-			"nombre": "Tecnologias Web",
-			"curso": 1
-		},
-		"grupo": {
-			"id": 60,
-			"nombre": "DAW1T",
-			"curso": 1,
-			"ciclo": 53
-		},
-		"ultimo_contenido_impartido": "Lambdas",
-		"estado": "AL_DIA",
-		"justificacion_estado": "",
-		"cumple_programacion": true,
-		"justificacion_cumple_programacion": "",
-		"mes": 5,
-		"evaluacion": "SEGUNDA",
-		"temario_actual": 78,
-		"docencia": 86
-	}
+  {
+    "id": 44,
+    "profesor": {
+      "id": 95,
+      "nombre": "Emilie",
+      "email": "b@profes.es",
+      "activo": true,
+      "is_admin": false
+    },
+    "modulo": {
+      "id": 76,
+      "ciclo": {
+        "id": 53,
+        "nombre": "DAW",
+        "año_academico": "2025-26"
+      },
+      "nombre": "Tecnologias Web",
+      "curso": 1
+    },
+    "grupo": {
+      "id": 59,
+      "nombre": "DAW1M",
+      "curso": 1,
+      "ciclo": 53
+    },
+    "ultimo_contenido_impartido": "Operadores",
+    "estado": "AL_DIA",
+    "justificacion_estado": "",
+    "cumple_programacion": true,
+    "justificacion_cumple_programacion": "",
+    "mes": 4,
+    "evaluacion": "PRIMERA",
+    "temario_actual": 78,
+    "docencia": 84
+  },
+  {
+    "id": 45,
+    "profesor": {
+      "id": 1,
+      "nombre": "Adrian",
+      "email": "adrianpuyetm@gmail.com",
+      "activo": true,
+      "is_admin": true
+    },
+    "modulo": {
+      "id": 76,
+      "ciclo": {
+        "id": 53,
+        "nombre": "DAW",
+        "año_academico": "2025-26"
+      },
+      "nombre": "Tecnologias Web",
+      "curso": 1
+    },
+    "grupo": {
+      "id": 60,
+      "nombre": "DAW1T",
+      "curso": 1,
+      "ciclo": 53
+    },
+    "ultimo_contenido_impartido": "Lambdas",
+    "estado": "AL_DIA",
+    "justificacion_estado": "",
+    "cumple_programacion": true,
+    "justificacion_cumple_programacion": "",
+    "mes": 5,
+    "evaluacion": "SEGUNDA",
+    "temario_actual": 78,
+    "docencia": 86
+  }
 ]
 ```
 
