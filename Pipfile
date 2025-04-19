@@ -14,6 +14,7 @@ django-import-export = {extras = ["xlsx"], version = "*"}
 django-autocomplete-light = "*"
 django-extensions = "*"
 django-jazzmin = "*"
+python-dotenv = "*"
 
 [dev-packages]
 ruff = "*"

@@ -12,7 +12,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+from urllib.parse import urlparse
 
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,13 +24,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-=1seo&72qbf8$p6z2t&7m2%_mvnbslm$)g#wy4ix@bbruuwmug"
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG")
 
 ALLOWED_HOSTS = ["*"]
-FRONTEND_URL = "http://localhost:8080"
+FRONTEND_URL = os.environ.get("FRONTEND_URL")
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_ROOT = os.path.join(PROJECT_DIR, "static")
 
@@ -84,15 +87,14 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "seguimientos",
-        "USER": "postgres",
-        "PASSWORD": "1234",  # this is only for develop
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": os.environ.get("DB_HOST"),
+        "PORT": os.environ.get("DB_PORT"),
     }
 }
 
@@ -150,16 +152,20 @@ REST_FRAMEWORK = {
 }
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
-EMAIL_FILE_PATH = "../tmp/app-messages"  # change this to a proper location
+EMAIL_FILE_PATH = "../tmp/app-messages"
 # Djoser
+parsed_url = urlparse(FRONTEND_URL)
 DJOSER = {
-    "PASSWORD_RESET_CONFIRM_URL": "#/password/reset/confirm/{uid}/{token}",
-    "USERNAME_RESET_CONFIRM_URL": "#/username/reset/confirm/{uid}/{token}",
+    "PASSWORD_RESET_CONFIRM_URL": "password/{uid}/{token}",
+    "USERNAME_RESET_CONFIRM_URL": "username/reset/confirm/{uid}/{token}",
     "SEND_ACTIVATION_EMAIL": False,
     "SERIALIZERS": {
         "current_user": "seguimientos.serializers.ProfesorSerializer",
         "user": "seguimientos.serializers.ProfesorSerializer",
     },
+    "EMAIL_FRONTEND_SITE_NAME": parsed_url.netloc,
+    "EMAIL_FRONTEND_DOMAIN": parsed_url.netloc,
+    "EMAIL_FRONTEND_PROTOCOL": parsed_url.scheme,
 }
 
 # Jazzmin
