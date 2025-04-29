@@ -524,7 +524,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
     )
 
     def get_estado_colored(self, obj):
-        colors = {"ATRASADO": "red", "AL_DIA": "green", "ADELANTADO": "aqua"}
+        colors = {"ATRASADO": "red", "AL_DIA": "green", "ADELANTADO": "blue"}
         return format_html(
             '<span style="color: {};">{}</span>',
             colors.get(obj.estado, "black"),
