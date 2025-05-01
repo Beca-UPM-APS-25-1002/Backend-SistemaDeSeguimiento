@@ -17,6 +17,7 @@ django-jazzmin = "*"
 python-dotenv = "*"
 gunicorn = "*"
 whitenoise = "*"
+weasyprint = "*"
 
 [dev-packages]
 ruff = "*"

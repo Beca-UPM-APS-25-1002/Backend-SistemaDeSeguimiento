@@ -14,6 +14,9 @@ from import_export.admin import ExportActionModelAdmin
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from weasyprint import HTML
 from .utils import get_año_academico_actual
 
 from .models import (
@@ -454,6 +457,7 @@ class SeguimientoForm(forms.ModelForm):
 class SeguimientoAdmin(ExportActionModelAdmin):
     form = SeguimientoForm
     show_change_form_export = False
+    show_export_button = False
     list_display = [
         "docencia",
         "get_mes",
@@ -465,7 +469,7 @@ class SeguimientoAdmin(ExportActionModelAdmin):
     # Filter for año academico, it defaults the current year
     class AñoAcademicoFilter(admin.SimpleListFilter):
         title = "año académico"
-        parameter_name = "docencia__modulo__ciclo__año_academico__año_academico"
+        parameter_name = "año_academico"
 
         def lookups(self, request, model_admin):
             # Get all distinct academic years
@@ -634,3 +638,64 @@ class SeguimientoAdmin(ExportActionModelAdmin):
             ),
         ]
         return custom_urls + urls
+
+    actions = ["export_as_pdf"]
+
+    def export_as_pdf(self, request, queryset):
+        # Create a context with data for the template
+        seguimientos = {}
+        queryset_list = list(queryset)
+        queryset_list.sort(key=lambda s: (str(s.año_academico), (s.mes + 3) % 12))
+        for seguimiento in queryset_list:
+            año = str(seguimiento.año_academico)
+            mes = calendar.month_name[seguimiento.mes].title()
+
+            if año not in seguimientos:
+                seguimientos[año] = {}
+
+            if mes not in seguimientos[año]:
+                seguimientos[año][mes] = []
+
+            seguimientos[año][mes].append(
+                {
+                    "id": seguimiento.id,
+                    "profesor": seguimiento.profesor.nombre,
+                    "modulo": seguimiento.modulo.nombre,
+                    "grupo": seguimiento.grupo.nombre,
+                    "ciclo": seguimiento.modulo.ciclo.nombre,
+                    "año_academico": seguimiento.año_academico,
+                    "mes": mes,
+                    "evaluacion": seguimiento.get_evaluacion_display(),
+                    "estado": seguimiento.get_estado_display(),
+                    "temario_actual": str(seguimiento.temario_actual),
+                    "ultimo_contenido_impartido": seguimiento.ultimo_contenido_impartido,
+                    "cumple_programacion": "Sí"
+                    if seguimiento.cumple_programacion
+                    else "No",
+                    "justificacion_estado": seguimiento.justificacion_estado,
+                    "justificacion_cumple_programacion": seguimiento.justificacion_cumple_programacion,
+                }
+            )
+
+        context = {
+            "seguimientos": seguimientos,
+            "count": len(queryset_list),
+            "title": "Informe de Seguimientos",
+        }
+
+        # Render the template to HTML
+        html_string = render_to_string("admin/seguimiento_pdf_export.html", context)
+
+        # Generate PDF from HTML
+        html = HTML(string=html_string)
+        pdf_file = html.write_pdf()
+
+        # Create HTTP response with appropriate PDF headers
+        response = HttpResponse(pdf_file, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            'attachment; filename="seguimientos_report.pdf"'
+        )
+
+        return response
+
+    export_as_pdf.short_description = "Exportar seguimientos seleccionados a PDF"

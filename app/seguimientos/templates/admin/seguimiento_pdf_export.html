@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @top-center {
+                content: '{{ title }}';
+                font-family: 'Helvetica', sans-serif;
+                font-size: 10pt;
+            }
+            @bottom-right {
+                content: 'Página ' counter(page) ' de ' counter(pages);
+                font-family: 'Helvetica', sans-serif;
+                font-size: 10pt;
+            }
+        }
+
+        body {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #2c5282;
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            color: #2c5282;
+            margin: 0;
+            font-size: 24pt;
+        }
+
+        .header p {
+            color: #718096;
+            margin: 5px 0;
+            font-size: 12pt;
+        }
+
+        .summary {
+            background-color: #f7fafc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .summary p {
+            margin: 5px 0;
+        }
+
+        .seguimiento {
+            margin-bottom: 30px;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .seguimiento-header {
+            background-color: #2c5282;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+        }
+
+        .seguimiento-content {
+            padding: 15px;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 10px;
+        }
+
+        .data-item {
+            margin-bottom: 10px;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #4a5568;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .value {
+            display: block;
+        }
+
+        .estado-ATRASADO {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+
+        .estado-ALDÍA {
+            color: #2f855a;
+            font-weight: bold;
+        }
+
+        .estado-ADELANTADO {
+            color: #3182ce;
+            font-weight: bold;
+        }
+
+        .justify-box {
+            background-color: #f7fafc;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .section-header {
+            font-size: 16pt;
+            color: #2c5282;
+            margin-top: 40px;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #2c5282;
+            padding-bottom: 5px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 10pt;
+            color: #718096;
+            margin-top: 30px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ title }}</h1>
+        <p>Generado el {% now "j F Y, H:i" %}</p>
+    </div>
+
+    <div class="summary">
+        <p><strong>Total de seguimientos:</strong> {{ count }}</p>
+    </div>
+
+    {% for año, seguimientos_por_año in seguimientos.items %}
+        <div class="section-header">Año académico: {{ año }}</div>
+        {% for mes, seguimientos_por_mes in seguimientos_por_año.items %}
+            <div class="section-header">Mes: {{ mes }}</div>
+            {% for seguimiento in seguimientos_por_mes %}
+                <div class="seguimiento">
+                    <div class="seguimiento-header">
+                        {{ seguimiento.modulo }} - {{ seguimiento.grupo }} - {{ seguimiento.profesor }}
+                    </div>
+                    <div class="seguimiento-content">
+                        <div class="data-grid">
+                            <div class="data-item">
+                                <span class="label">Año Académico:</span>
+                                <span class="value">{{ seguimiento.año_academico }}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="label">Mes:</span>
+                                <span class="value">{{ seguimiento.mes }}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="label">Evaluación:</span>
+                                <span class="value">{{ seguimiento.evaluacion }}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="label">Estado:</span>
+                                <span class="value estado-{{ seguimiento.estado|cut:" "|upper }}">{{ seguimiento.estado }}</span>
+                            </div>
+                        </div>
+
+                        <div class="data-item">
+                            <span class="label">Temario Actual:</span>
+                            <span class="value">{{ seguimiento.temario_actual }}</span>
+                        </div>
+
+                        <div class="data-item">
+                            <span class="label">Último Contenido Impartido:</span>
+                            <span class="value">{{ seguimiento.ultimo_contenido_impartido }}</span>
+                        </div>
+
+                        <div class="data-item">
+                            <span class="label">Cumple Programación:</span>
+                            <span class="value">{{ seguimiento.cumple_programacion }}</span>
+                        </div>
+                        {% if seguimiento.justificacion_estado %}
+                            <div class="data-item">
+                                <span class="label">Justificación del Estado:</span>
+                                <div class="justify-box">
+                                    {{ seguimiento.justificacion_estado }}
+                                </div>
+                            </div>
+                        {% endif %}
+                            
+                        {% if seguimiento.justificacion_cumple_programacion %}
+                            <div class="data-item">
+                                <span class="label">Justificación de Cumplimiento de Programación:</span>
+                                <div class="justify-box">
+                                    {{ seguimiento.justificacion_cumple_programacion }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    {% endfor %}
+
+    <div class="footer">
+        <p>Este documento es un informe de seguimiento académico.</p>
+    </div>
+</body>
+</html>
