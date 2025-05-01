@@ -10,10 +10,11 @@ from django.shortcuts import render
 from django.urls import path
 from django.utils.html import format_html
 from import_export import fields, resources
-from import_export.admin import ExportMixin
+from import_export.admin import ExportActionModelAdmin
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.core.exceptions import ValidationError
+from .utils import get_año_academico_actual
 
 from .models import (
     AñoAcademico,
@@ -450,8 +451,9 @@ class SeguimientoForm(forms.ModelForm):
 
 
 @admin.register(Seguimiento)
-class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
+class SeguimientoAdmin(ExportActionModelAdmin):
     form = SeguimientoForm
+    show_change_form_export = False
     list_display = [
         "docencia",
         "get_mes",
@@ -460,14 +462,61 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         "temario_actual",
     ]
 
+    # Filter for año academico, it defaults the current year
+    class AñoAcademicoFilter(admin.SimpleListFilter):
+        title = "año académico"
+        parameter_name = "docencia__modulo__ciclo__año_academico__año_academico"
+
+        def lookups(self, request, model_admin):
+            # Get all distinct academic years
+            años_academicos = AñoAcademico.objects.all().order_by("-año_academico")
+            return [("todos", "Todos")] + [(año, año) for año in años_academicos]
+
+        def choices(self, changelist):
+            choices = list(super().choices(changelist))
+
+            # If no filter is selected, select the current academic year by default
+            if not self.value():
+                # Get the current academic year
+                año_actual = get_año_academico_actual()
+                if año_actual:
+                    # Modify the default "All" option to be unselected
+                    choices[0]["selected"] = False
+
+                    # Add the current academic year as selected
+                    for choice in choices[1:]:
+                        if str(choice["display"]) == str(año_actual):
+                            choice["selected"] = True
+                            break
+
+            return choices
+
+        def queryset(self, request, queryset):
+            if self.value():
+                if self.value() == "todos":
+                    return queryset
+                # User has selected a value
+                return queryset.filter(
+                    docencia__modulo__ciclo__año_academico=self.value()
+                )
+            else:
+                # No value selected, use current year
+                año_actual = get_año_academico_actual()
+                if año_actual:
+                    # Apply the default filter
+                    return queryset.filter(
+                        docencia__modulo__ciclo__año_academico=año_actual
+                    )
+            # If no default or no value selected, return the complete queryset
+            return queryset
+
     # Custom filter for Modulo that depends on año_academico
     class ModuloFilter(SimpleListFilter):
-        title = "Módulo"
+        title = "módulo"
         parameter_name = "docencia__modulo"
 
         def lookups(self, request, model_admin):
             # Get the current año_academico filter value from the request
-            print(request)
             año_academico = request.GET.get(
                 "docencia__modulo__ciclo__año_academico__año_academico__exact", None
             )
@@ -490,7 +539,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
     list_filter = [
         "estado",
         "cumple_programacion",
-        "docencia__modulo__ciclo__año_academico",
+        AñoAcademicoFilter,
         "mes",
         ModuloFilter,
         "docencia__profesor",
@@ -543,8 +592,6 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
     class Media:
         js = [
             "admin/js/vendor/jquery/jquery.min.js",
-            "autocomplete_light/jquery.init.js",
-            "autocomplete_light/autocomplete.init.js",
         ]
         css = {
             "all": [
