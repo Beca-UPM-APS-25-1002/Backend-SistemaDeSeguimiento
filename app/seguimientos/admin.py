@@ -456,7 +456,7 @@ class SeguimientoForm(forms.ModelForm):
 
 
 @admin.register(Seguimiento)
-class SeguimientoAdmin(admin.ModelAdmin, ExportMixin):
+class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
     form = SeguimientoForm
     list_display = [
         "docencia",
