@@ -18,16 +18,29 @@ class AñoAcademico(models.Model):
 
     def save(self, *args, **kwargs):
         """Invalidamos el cache de años si se ha registrado un nuevo modulo"""
-        if self.actual:
-            # If this instance is being set as actual, set all other instances to False
+        # Comprobamos si este es el primer registro creado
+        if not AñoAcademico.objects.exists():
+            self.actual = True
+        elif self.actual:
+            # Si esta instancia se establece como actual, ponemos todas las demás como False
             AñoAcademico.objects.exclude(pk=self.pk).update(actual=False)
+
         cache.delete("año_academico_actual")
         super().save(*args, **kwargs)
 
-    class Meta:
-        verbose_name = "Año Academico"
-        verbose_name_plural = "Años Academicos"
-        ordering = ["-año_academico"]
+    def delete(self, *args, **kwargs):
+        """Si eliminamos el año actual, establecemos el año más alto como actual"""
+        is_actual = self.actual
+
+        # Llamamos primero al método delete del padre
+        super().delete(*args, **kwargs)
+
+        # Después de la eliminación, si este era el año actual, establecemos el año más alto como actual
+        if is_actual and AñoAcademico.objects.exists():
+            highest_year = AñoAcademico.objects.order_by("-año_academico").first()
+            if highest_year:
+                highest_year.actual = True
+                highest_year.save()
 
 
 class Ciclo(models.Model):

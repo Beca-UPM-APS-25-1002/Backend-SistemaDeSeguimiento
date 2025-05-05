@@ -11,6 +11,89 @@ from seguimientos.models import (
 )
 
 
+class AñoAcademicoModelTests(TestCase):
+    """Tests para el modelo AñoAcademico"""
+
+    def test_primer_año_es_actual(self):
+        """Probar que el primer año creado se establece como actual automáticamente"""
+        año = AñoAcademico.objects.create(año_academico="2022-23")
+        self.assertTrue(año.actual)
+
+    def test_solo_un_año_es_actual(self):
+        """Probar que solo un año puede ser actual a la vez"""
+        año1 = AñoAcademico.objects.create(año_academico="2022-23")
+        año2 = AñoAcademico.objects.create(año_academico="2023-24")
+        año3 = AñoAcademico.objects.create(año_academico="2024-25")
+
+        # Verificar que el primer año creado es actual
+        self.assertTrue(año1.actual)
+        self.assertFalse(año2.actual)
+        self.assertFalse(año3.actual)
+
+        # Cambiar el actual a año2
+        año2.actual = True
+        año2.save()
+
+        # Recargar desde la base de datos
+        año1.refresh_from_db()
+        año2.refresh_from_db()
+        año3.refresh_from_db()
+
+        # Verificar que solo año2 es actual
+        self.assertFalse(año1.actual)
+        self.assertTrue(año2.actual)
+        self.assertFalse(año3.actual)
+
+    def test_eliminar_año_actual(self):
+        """Probar que al eliminar el año actual, el año con valor más alto se convierte en actual"""
+        AñoAcademico.objects.create(año_academico="2022-23")
+        AñoAcademico.objects.create(año_academico="2023-24")
+        año_actual = AñoAcademico.objects.create(año_academico="2024-25")
+
+        # Establecer el último año como actual
+        año_actual.actual = True
+        año_actual.save()
+
+        # Verificar que es el único actual
+        self.assertEqual(AñoAcademico.objects.filter(actual=True).count(), 1)
+        self.assertEqual(AñoAcademico.objects.get(actual=True).año_academico, "2024-25")
+
+        # Eliminar el año actual
+        año_actual.delete()
+
+        # Verificar que ahora el año más alto es actual
+        self.assertEqual(AñoAcademico.objects.filter(actual=True).count(), 1)
+        self.assertEqual(AñoAcademico.objects.get(actual=True).año_academico, "2023-24")
+
+    def test_eliminar_año_no_actual(self):
+        """Probar que al eliminar un año que no es actual, el año actual no cambia"""
+        AñoAcademico.objects.create(año_academico="2022-23")
+        año2 = AñoAcademico.objects.create(año_academico="2023-24")
+        año3 = AñoAcademico.objects.create(año_academico="2024-25")
+
+        # Establecer año2 como actual
+        año2.actual = True
+        año2.save()
+
+        # Eliminar año3 (que no es actual)
+        año3.delete()
+
+        # Verificar que año2 sigue siendo actual
+        self.assertEqual(AñoAcademico.objects.filter(actual=True).count(), 1)
+        self.assertEqual(AñoAcademico.objects.get(actual=True).año_academico, "2023-24")
+
+    def test_eliminar_todos_los_años(self):
+        """Probar que se pueden eliminar todos los años"""
+        AñoAcademico.objects.create(año_academico="2022-23")
+        AñoAcademico.objects.create(año_academico="2023-24")
+
+        # Eliminar todos los años
+        AñoAcademico.objects.all().delete()
+
+        # Verificar que no quedan años
+        self.assertEqual(AñoAcademico.objects.count(), 0)
+
+
 class SeguimientoModelTestCase(TestCase):
     def setUp(self):
         """Configura los datos iniciales para probar el método save de Seguimiento"""
