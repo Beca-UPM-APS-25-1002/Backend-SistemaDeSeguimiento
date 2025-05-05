@@ -15,8 +15,8 @@ def get_año_academico_actual():
     if año_cacheado:
         return año_cacheado
 
-    # Obtener el módulo con el ID más alto (el más reciente)
-    latest_year = AñoAcademico.objects.order_by("-año_academico").first()
+    # Obtener el año marcado cómo actual
+    latest_year = AñoAcademico.objects.filter(actual=True)
 
     if latest_year:
         ultimo_año = latest_year.año_academico

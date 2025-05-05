@@ -10,7 +10,9 @@ from django.shortcuts import render
 from django.urls import path
 from django.utils.html import format_html
 from import_export import fields, resources
-from import_export.admin import ExportActionModelAdmin
+from import_export.admin import (
+    ExportMixin,
+)
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.core.exceptions import ValidationError
@@ -69,7 +71,7 @@ class ModuloInline(admin.TabularInline):
 
 @admin.register(AñoAcademico)
 class AñoAcademicoAdmin(admin.ModelAdmin):
-    list_display = ("año_academico", "get_clonar_button")
+    list_display = ("año_academico", "actual", "get_clonar_button")
 
     def get_clonar_button(self, obj):
         """Añade un botón para clonar en cada fila"""
@@ -139,7 +141,7 @@ class AñoAcademicoAdmin(admin.ModelAdmin):
                 )
 
             # Crear el nuevo año académico
-            nuevo_año = AñoAcademico(año_academico=nuevo_año_valor)
+            nuevo_año = AñoAcademico(año_academico=nuevo_año_valor, actual=True)
             try:
                 nuevo_año.full_clean()
             except ValidationError as err:
@@ -454,10 +456,8 @@ class SeguimientoForm(forms.ModelForm):
 
 
 @admin.register(Seguimiento)
-class SeguimientoAdmin(ExportActionModelAdmin):
+class SeguimientoAdmin(admin.ModelAdmin, ExportMixin):
     form = SeguimientoForm
-    show_change_form_export = False
-    show_export_button = False
     list_display = [
         "docencia",
         "get_mes",

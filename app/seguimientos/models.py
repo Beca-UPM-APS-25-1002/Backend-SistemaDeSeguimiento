@@ -11,12 +11,16 @@ class AñoAcademico(models.Model):
     año_academico = models.CharField(
         null=False, max_length=7, primary_key=True, validators=[validate_año]
     )
+    actual = models.BooleanField(default=False)
 
     def __str__(self):
         return self.año_academico
 
     def save(self, *args, **kwargs):
         """Invalidamos el cache de años si se ha registrado un nuevo modulo"""
+        if self.actual:
+            # If this instance is being set as actual, set all other instances to False
+            AñoAcademico.objects.exclude(pk=self.pk).update(actual=False)
         cache.delete("año_academico_actual")
         super().save(*args, **kwargs)
 
@@ -30,7 +34,7 @@ class Ciclo(models.Model):
     nombre = models.CharField(null=False, max_length=255)
     año_academico = models.ForeignKey(
         AñoAcademico,
-        on_delete=models.RESTRICT,
+        on_delete=models.CASCADE,
         to_field="año_academico",
         related_name="ciclos",
     )
@@ -38,10 +42,13 @@ class Ciclo(models.Model):
     def __str__(self):
         return f"{self.nombre} - {self.año_academico}"
 
+    class Meta:
+        ordering = ["-año_academico", "nombre"]
+
 
 class Grupo(models.Model):
     nombre = models.CharField(null=False, max_length=255)
-    ciclo = models.ForeignKey(Ciclo, on_delete=models.RESTRICT, related_name="grupos")
+    ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, related_name="grupos")
     curso = models.IntegerField(null=False, validators=[MinValueValidator(1)])
 
     @cached_property
@@ -50,17 +57,15 @@ class Grupo(models.Model):
 
     def __str__(self):
         return f"{self.nombre} - {self.ciclo}"
+
+    class Meta:
+        ordering = ["-ciclo__año_academico", "nombre"]
 
 
 class Modulo(models.Model):
     nombre = models.CharField(null=False, max_length=255)
     curso = models.IntegerField(null=False, validators=[MinValueValidator(1)])
-    ciclo = models.ForeignKey(Ciclo, on_delete=models.RESTRICT, related_name="modulos")
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["ciclo"]),
-        ]
+    ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, related_name="modulos")
 
     @cached_property
     def año_academico(self):
@@ -68,6 +73,12 @@ class Modulo(models.Model):
 
     def __str__(self):
         return f"{self.nombre} - {self.ciclo}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["ciclo"]),
+        ]
+        ordering = ["-ciclo__año_academico", "ciclo", "curso", "nombre"]
 
 
 class UnidadDeTrabajo(models.Model):
@@ -88,6 +99,9 @@ class UnidadDeTrabajo(models.Model):
         verbose_name = "Unidad de Temario"
         verbose_name_plural = "Unidades de Temario"
         ordering = ["numero_tema"]
+        constraints = [
+            models.UniqueConstraint(fields=["numero_tema", "modulo"], name="tema_unico")
+        ]
 
 
 class ProfesorManager(BaseUserManager):
@@ -237,7 +251,11 @@ class Seguimiento(models.Model):
 
     class Meta:
         # Garantizar un seguimiento al mes por docencia
-        unique_together = ["docencia", "mes"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["docencia", "mes"], name="docencia_mes_unicos"
+            )
+        ]
         indexes = [
             models.Index(fields=["mes"]),
             models.Index(fields=["docencia", "mes"]),
