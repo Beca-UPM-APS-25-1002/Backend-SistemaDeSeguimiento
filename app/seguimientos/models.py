@@ -42,6 +42,10 @@ class AñoAcademico(models.Model):
                 highest_year.actual = True
                 highest_year.save()
 
+    class Meta:
+        verbose_name = "Año Academico"
+        verbose_name_plural = "Años Academicos"
+
 
 class Ciclo(models.Model):
     nombre = models.CharField(null=False, max_length=255)

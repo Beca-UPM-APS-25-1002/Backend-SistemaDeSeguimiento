@@ -19,8 +19,11 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from weasyprint import HTML
-from .utils import get_año_academico_actual
-
+from .admin_filters import (
+    BaseAñoAcademicoFilter,
+    GrupoAndModuloAñoAcademicoFilter,
+    CicloAñoAcademicoFilter,
+)
 from .models import (
     AñoAcademico,
     Ciclo,
@@ -264,7 +267,7 @@ class AñoAcademicoAdmin(admin.ModelAdmin):
 class CicloAdmin(admin.ModelAdmin):
     list_display = ["nombre", "año_academico"]
     search_fields = ["nombre", "año_academico"]
-    list_filter = ["año_academico"]
+    list_filter = [CicloAñoAcademicoFilter]
     inlines = [GrupoInline, ModuloInline]
 
 
@@ -281,7 +284,7 @@ class UnidadDeTrabajoInline(admin.TabularInline):
 @admin.register(Grupo)
 class GrupoAdmin(admin.ModelAdmin):
     list_display = ["nombre", "ciclo", "curso"]
-    list_filter = ["ciclo__año_academico", "ciclo", "curso"]
+    list_filter = [GrupoAndModuloAñoAcademicoFilter, "ciclo", "curso"]
     search_fields = ["nombre", "ciclo__nombre"]
 
 
@@ -294,7 +297,7 @@ class ModuloAdmin(admin.ModelAdmin):
         "ciclo",
     ]
     list_filter = [
-        "ciclo__año_academico",
+        GrupoAndModuloAñoAcademicoFilter,
         "ciclo",
         "curso",
     ]
@@ -466,54 +469,6 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         "temario_actual",
     ]
 
-    # Filter for año academico, it defaults the current year
-    class AñoAcademicoFilter(admin.SimpleListFilter):
-        title = "año académico"
-        parameter_name = "año_academico"
-
-        def lookups(self, request, model_admin):
-            # Get all distinct academic years
-            años_academicos = AñoAcademico.objects.all().order_by("-año_academico")
-            return [("todos", "Todos")] + [(año, año) for año in años_academicos]
-
-        def choices(self, changelist):
-            choices = list(super().choices(changelist))
-
-            # If no filter is selected, select the current academic year by default
-            if not self.value():
-                # Get the current academic year
-                año_actual = get_año_academico_actual()
-                if año_actual:
-                    # Modify the default "All" option to be unselected
-                    choices[0]["selected"] = False
-
-                    # Add the current academic year as selected
-                    for choice in choices[1:]:
-                        if str(choice["display"]) == str(año_actual):
-                            choice["selected"] = True
-                            break
-
-            return choices
-
-        def queryset(self, request, queryset):
-            if self.value():
-                if self.value() == "todos":
-                    return queryset
-                # User has selected a value
-                return queryset.filter(
-                    docencia__modulo__ciclo__año_academico=self.value()
-                )
-            else:
-                # No value selected, use current year
-                año_actual = get_año_academico_actual()
-                if año_actual:
-                    # Apply the default filter
-                    return queryset.filter(
-                        docencia__modulo__ciclo__año_academico=año_actual
-                    )
-            # If no default or no value selected, return the complete queryset
-            return queryset
-
     # Custom filter for Modulo that depends on año_academico
     class ModuloFilter(SimpleListFilter):
         title = "módulo"
@@ -521,9 +476,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
 
         def lookups(self, request, model_admin):
             # Get the current año_academico filter value from the request
-            año_academico = request.GET.get(
-                "docencia__modulo__ciclo__año_academico__año_academico__exact", None
-            )
+            año_academico = request.GET.get("año_academico", None)
 
             # Filter modules based on the selected año_academico
             if año_academico:
@@ -543,7 +496,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
     list_filter = [
         "estado",
         "cumple_programacion",
-        AñoAcademicoFilter,
+        BaseAñoAcademicoFilter,
         "mes",
         ModuloFilter,
         "docencia__profesor",
