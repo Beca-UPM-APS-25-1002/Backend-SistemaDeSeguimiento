@@ -1,4 +1,10 @@
-from .models import Seguimiento, Modulo, UnidadDeTrabajo, Docencia
+from .models import (
+    Seguimiento,
+    Modulo,
+    UnidadDeTrabajo,
+    Docencia,
+    RecordatorioEmailConfig,
+)
 from rest_framework import status, viewsets, generics
 from django.db.models import Q
 from rest_framework.views import APIView
@@ -10,6 +16,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.mail import send_mail
 from django.conf import settings
 from .serializers import RecordatorioSerializer
+from django.template import Template, Context
 import calendar
 from .serializers import (
     SeguimientoSerializer,
@@ -221,11 +228,16 @@ class EnviarRecordatorioSeguimientoView(APIView):
 
         docencias = serializer.validated_data["docencias"]
         mes = serializer.validated_data["mes"]
+        mes_nombre = calendar.month_name[mes].capitalize()
+
+        # Obtener la configuración del email
+        email_config = RecordatorioEmailConfig.get_solo()
 
         # Diccionario para agrupar docencias por profesor
         profesores_docencias = {}
         docencias_no_encontradas = []
         profesores_no_activos = []
+
         # Recopilar todas las docencias agrupadas por profesor
         for docencia_id in docencias:
             try:
@@ -242,46 +254,44 @@ class EnviarRecordatorioSeguimientoView(APIView):
             except Docencia.DoesNotExist:
                 docencias_no_encontradas.append(docencia_id)
 
+        # URL al frontend
+        frontend_url = settings.FRONTEND_URL
+
         # Enviar emails personalizados a cada profesor
         emails_enviados = 0
 
         for profesor_data in profesores_docencias.values():
             profesor = profesor_data["profesor"]
-            docencias = profesor_data["docencias"]
+            docencias_profesor = profesor_data["docencias"]
 
             if not profesor.activo or not profesor.is_active:
                 profesores_no_activos.append(profesor)
                 continue
 
-            mensaje = "Estimado/a " + profesor.nombre + ",\n\n"
-            mensaje += (
-                "Le recordamos que tiene pendiente realizar el seguimiento del mes de "
-                + calendar.month_name[mes].capitalize()
-                + " para las siguientes docencias:\n\n"
+            # Preparar el listado de docencias
+            listado_docencias = ""
+            for docencia in docencias_profesor:
+                listado_docencias += f"- {docencia.modulo.nombre} para el grupo {docencia.grupo.nombre}\n"
+
+            # Contexto para renderizar la plantilla
+            context = Context(
+                {
+                    "nombre_profesor": profesor.nombre,
+                    "mes": mes_nombre,
+                    "listado_docencias": listado_docencias,
+                    "url_frontend": frontend_url,
+                }
             )
 
-            for docencia in docencias:
-                mensaje += (
-                    "- "
-                    + docencia.modulo.nombre
-                    + " para el grupo "
-                    + docencia.grupo.nombre
-                    + "\n"
-                )
-
-            # URL al frontend (configurar en settings.py)
-            frontend_url = settings.FRONTEND_URL
-
-            mensaje += "\nPuede completar los seguimientos pendientes haciendo clic en el siguiente enlace:\n"
-            mensaje += frontend_url + "\n\n"
-            mensaje += "Gracias por su colaboración.\n\n"
-            mensaje += (
-                "Este es un correo automático, por favor no responda a esta dirección."
-            )
+            # Renderizar la plantilla
+            asunto_template = Template(email_config.asunto)
+            asunto = asunto_template.render(context)
+            template = Template(email_config.contenido)
+            mensaje = template.render(context)
 
             try:
                 send_mail(
-                    subject=f"Recordatorio de seguimiento pendiente - {calendar.month_name[mes].capitalize()}",
+                    subject=asunto,
                     message=mensaje,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[profesor.email],
@@ -290,6 +300,7 @@ class EnviarRecordatorioSeguimientoView(APIView):
                 emails_enviados += 1
             except Exception:
                 continue
+
         return Response(
             {
                 "status": "success",

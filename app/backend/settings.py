@@ -187,6 +187,7 @@ JAZZMIN_SETTINGS = {
         "seguimientos.modulo": "fas fa-chalkboard",
         "seguimientos.profesor": "fas fa-chalkboard-user",
         "seguimientos.seguimiento": "fas fa-clipboard",
+        "seguimientos.recordatorioemailconfig": "fas fa-envelope",
     },
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",

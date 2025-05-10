@@ -9,6 +9,7 @@ from django.forms import ModelForm
 from django.shortcuts import render
 from django.urls import path
 from django.utils.html import format_html
+from solo.admin import SingletonModelAdmin
 from import_export import fields, resources
 from import_export.admin import (
     ExportMixin,
@@ -33,6 +34,7 @@ from .models import (
     Profesor,
     Seguimiento,
     UnidadDeTrabajo,
+    RecordatorioEmailConfig,
 )
 
 admin.site.site_header = "Administración de Seguimientos"
@@ -652,3 +654,27 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         return response
 
     export_as_pdf.short_description = "Exportar seguimientos seleccionados a PDF"
+
+
+@admin.register(RecordatorioEmailConfig)
+class RecordatorioEmailConfigAdmin(SingletonModelAdmin):
+    """
+    Admin para configurar la plantilla de correo electrónico de recordatorio.
+    """
+
+    readonly_fields = ("help_text",)
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": ("asunto", "contenido"),
+            },
+        ),
+        (
+            "Ayuda",
+            {
+                "fields": ("help_text",),
+                "classes": ("collapse",),
+            },
+        ),
+    )

@@ -4,6 +4,9 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.functional import cached_property
 from django.core.cache import cache
+from solo.models import SingletonModel
+from django.core.exceptions import ValidationError
+
 from .validators import validate_año
 
 
@@ -277,3 +280,63 @@ class Seguimiento(models.Model):
             models.Index(fields=["mes"]),
             models.Index(fields=["docencia", "mes"]),
         ]
+
+
+class RecordatorioEmailConfig(SingletonModel):
+    """
+    Configuración para los emails de recordatorio de seguimiento.
+    Este modelo permite personalizar la plantilla de correo desde el admin.
+    """
+
+    asunto = models.CharField(
+        max_length=255, default="Recordatorio de seguimiento pendiente - {{ mes }}"
+    )
+
+    contenido = models.TextField(
+        default="""Estimado/a {{ nombre_profesor }},
+
+Le recordamos que tiene pendiente realizar el seguimiento del mes de {{ mes }} para las siguientes docencias:
+
+{{ listado_docencias }}
+
+Puede completar los seguimientos pendientes haciendo clic en el siguiente enlace:
+{{ url_frontend }}
+
+Gracias por su colaboración.
+
+Este es un correo automático, por favor no responda a esta dirección."""
+    )
+
+    help_text = models.TextField(
+        verbose_name="Información de ayuda",
+        default="""Variables disponibles:
+- {{ nombre_profesor }}: Nombre del profesor
+- {{ mes }}: Nombre del mes del seguimiento
+- {{ listado_docencias }}: Lista de docencias pendientes
+- {{ url_frontend }}: URL del frontend para acceder al sistema
+Debes añadir por lo menos el mes y el listado de docencias al contenido.
+Puedes poner las variables también en el asunto.
+¡Cuidado, tienes que añadir un espacio antes y despues del nombre de cada variable! 
+        """,
+        editable=False,
+    )
+
+    def clean(self):
+        """Verifica que la plantilla contenga las variables requeridas."""
+        required_vars = [
+            "{{ mes }}",
+            "{{ listado_docencias }}",
+        ]
+
+        missing_vars = []
+        for var in required_vars:
+            if var not in self.contenido:
+                missing_vars.append(var)
+
+        if missing_vars:
+            raise ValidationError(
+                f"La plantilla debe contener las siguientes variables: {', '.join(missing_vars)}"
+            )
+
+    class Meta:
+        verbose_name = "Configuración de Email de Recordatorio"
