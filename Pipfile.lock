@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ef048688250bbf3f933aa09540fd671afd8acf5ef65acba957f047c8789b1f9c"
+            "sha256": "a7b8bc1ba9adbe21863ab7abc4f7af90a5fc4f95d5e0547b4c5d46e895ef4bcd"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -402,12 +402,12 @@
         },
         "django": {
             "hashes": [
-                "sha256:1a47f7a7a3d43ce64570d350e008d2949abe8c7e21737b351b6a1611277c6d89",
-                "sha256:91ceed4e3a6db5aedced65e3c8f963118ea9ba753fc620831c77074e620e7d83"
+                "sha256:57fe1f1b59462caed092c80b3dd324fd92161b620d59a9ba9181c34746c97284",
+                "sha256:a9b680e84f9a0e71da83e399f1e922e1ab37b2173ced046b541c72e1589a5961"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.10'",
-            "version": "==5.2"
+            "version": "==5.2.1"
         },
         "django-autocomplete-light": {
             "hashes": [
@@ -424,6 +424,14 @@
             "index": "pypi",
             "markers": "python_version >= '3.9'",
             "version": "==4.1"
+        },
+        "django-extra-settings": {
+            "hashes": [
+                "sha256:989c6c837597e6bc6f833a4fd938e9c772c4be2b982d72cc8c99b9394b9b5deb",
+                "sha256:cfd3b7ca414b3cca21c0314fca62f9cc9530b3be917dc853689ae589943b768b"
+            ],
+            "index": "pypi",
+            "version": "==0.14.0"
         },
         "django-filter": {
             "hashes": [
@@ -453,6 +461,15 @@
             "index": "pypi",
             "markers": "python_version >= '3.8'",
             "version": "==3.0.1"
+        },
+        "django-solo": {
+            "hashes": [
+                "sha256:62e9c7d929620a61848515839833750ca142840051595cf5c8e617dcefc9e5cf",
+                "sha256:ec92dc00aec75034a3f93b3a85152e57c4b03d7987f8cfd0ea8a47cc6e3c2084"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.9'",
+            "version": "==2.4.0"
         },
         "djangorestframework": {
             "hashes": [

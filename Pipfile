@@ -18,6 +18,8 @@ python-dotenv = "*"
 gunicorn = "*"
 whitenoise = "*"
 weasyprint = "*"
+django-extra-settings = "*"
+django-solo = "*"
 
 [dev-packages]
 ruff = "*"

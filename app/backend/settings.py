@@ -49,7 +49,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "djoser",
+    "solo",
     "seguimientos.apps.SeguimientosConfig",
+    "dynamic_email.apps.DynamicEmailConfig",
     "import_export",
     "django_extensions",
 ]
@@ -152,7 +154,7 @@ REST_FRAMEWORK = {
     ),
 }
 # Email
-EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+EMAIL_BACKEND = "dynamic_email.backend.DynamicEmailBackend"
 EMAIL_FILE_PATH = "../tmp/app-messages"
 # Djoser
 parsed_url = urlparse(FRONTEND_URL)
@@ -178,6 +180,7 @@ JAZZMIN_SETTINGS = {
     "show_sidebar": True,
     "navigation_expanded": True,
     "icons": {
+        "dynamic_email.emailsettings": "fas fa-envelope",
         "seguimientos.ciclo": "fas fa-graduation-cap",
         "seguimientos.añoacademico": "fas fa-calendar",
         "seguimientos.grupo": "fas fa-people-group",
