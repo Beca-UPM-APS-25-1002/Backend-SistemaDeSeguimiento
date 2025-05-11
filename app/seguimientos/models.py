@@ -230,6 +230,7 @@ class EvaluacionSeguimiento(models.TextChoices):
 
 
 class Seguimiento(models.Model):
+    temario_completado = models.ManyToManyField(UnidadDeTrabajo)
     temario_actual = models.ForeignKey(
         UnidadDeTrabajo, on_delete=models.RESTRICT, related_name="seguimientos"
     )

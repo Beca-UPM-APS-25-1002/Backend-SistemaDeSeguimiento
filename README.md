@@ -287,6 +287,7 @@ Consigue los seguimientos del profesor autenticado. Se puede filtrar con los par
       "curso": 1,
       "ciclo": 53
     },
+    "temario_completado": [76, 77],
     "ultimo_contenido_impartido": "Operadores",
     "estado": "AL_DIA",
     "justificacion_estado": "",
@@ -322,6 +323,7 @@ Consigue los seguimientos del profesor autenticado. Se puede filtrar con los par
       "curso": 1,
       "ciclo": 53
     },
+    "temario_completado": [76, 77],
     "ultimo_contenido_impartido": "Lambdas",
     "estado": "AL_DIA",
     "justificacion_estado": "",
@@ -342,6 +344,7 @@ Recibe:
 ```json
 {
   "id": 1,
+  "temario_completado": [76, 77],
   "ultimo_contenido_impartido": "Ultimo contenido",
   "estado": "ADELANTADO", //(ATRASADO, AL_DIA)
   "justificacion_estado": "justifiacion",
@@ -366,6 +369,7 @@ Devuelve:
   },
   "año_academico": "2025-26",
   "ultimo_contenido_impartido": "Integracion por partes - 4",
+  "temario_completado": [76, 77],
   "estado": "ADELANTADO",
   "justificacion_estado": "",
   "cumple_programacion": true,
