@@ -372,6 +372,7 @@ class SeguimientoViewSetTests(APITestCase):
         self.client.force_authenticate(user=self.profesor1)
         data = {
             "temario_actual": self.unidad1.id,
+            "temario_completado": [],
             "ultimo_contenido_impartido": "Funciones y métodos",
             "estado": "AL_DIA",
             "mes": 3,
@@ -391,6 +392,7 @@ class SeguimientoViewSetTests(APITestCase):
         self.client.force_authenticate(user=self.profesor1)
         data = {
             "temario_actual": self.unidad2.id,
+            "temario_completado": [self.unidad1.pk],
             "ultimo_contenido_impartido": "Consultas SQL",
             "estado": "AL_DIA",
             "mes": 3,
@@ -410,6 +412,7 @@ class SeguimientoViewSetTests(APITestCase):
         url_detail = reverse("seguimiento-detail", args=[self.seguimiento1.id])
         data = {
             "temario_actual": self.unidad1.id,
+            "temario_completado": [self.unidad2.pk],
             "ultimo_contenido_impartido": "Contenido actualizado",
             "estado": "ADELANTADO",
             "mes": 1,
@@ -433,6 +436,7 @@ class SeguimientoViewSetTests(APITestCase):
         url_detail = reverse("seguimiento-detail", args=[self.seguimiento2.id])
         data = {
             "temario_actual": self.unidad2.id,
+            "temario_completado": [self.unidad1.pk],
             "ultimo_contenido_impartido": "Intento de modificación",
             "estado": "ATRASADO",
             "mes": 1,

@@ -113,7 +113,7 @@ class UnidadDeTrabajo(models.Model):
         return self.modulo.ciclo.año_academico
 
     def __str__(self):
-        return f"T{self.numero_tema} - {self.titulo}"
+        return f"UT{self.numero_tema} - {self.titulo}"
 
     class Meta:
         verbose_name = "Unidad de Temario"
@@ -230,7 +230,7 @@ class EvaluacionSeguimiento(models.TextChoices):
 
 
 class Seguimiento(models.Model):
-    temario_completado = models.ManyToManyField(UnidadDeTrabajo)
+    temario_completado = models.ManyToManyField(UnidadDeTrabajo, blank=True)
     temario_actual = models.ForeignKey(
         UnidadDeTrabajo, on_delete=models.RESTRICT, related_name="seguimientos"
     )

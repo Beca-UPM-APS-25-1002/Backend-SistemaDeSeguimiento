@@ -430,7 +430,7 @@ class SeguimientoResource(resources.ModelResource):
             "mes",
             "evaluacion",
             "temario_actual",
-            "temario_actual",
+            "temario_completado",
             "ultimo_contenido_impartido",
             "estado",
             "justificacion_estado",
@@ -447,6 +447,9 @@ class SeguimientoResource(resources.ModelResource):
     def dehydrate_cumple_programacion(self, obj):
         return "Sí" if obj.cumple_programacion else "No"
 
+    def dehydrate_temario_completado(self, obj):
+        return ", ".join([str(unidad) for unidad in obj.temario_completado.all()])
+
 
 class SeguimientoForm(forms.ModelForm):
     class Meta:
@@ -460,6 +463,36 @@ class SeguimientoForm(forms.ModelForm):
         }
 
 
+# Create an inline for UnidadDeTrabajo within the Seguimiento admin
+class TemarioCompletadoInline(admin.TabularInline):
+    model = Seguimiento.temario_completado.through  # Use the through model
+    extra = 1
+    verbose_name = "Temario Completado"
+    verbose_name_plural = "Temarios Completados"
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Filter temario based on docencia
+        if (
+            db_field.name == "unidaddetrabajo"
+            and hasattr(self, "parent_obj")
+            and self.parent_obj
+        ):
+            kwargs["queryset"] = UnidadDeTrabajo.objects.filter(
+                modulo=self.parent_obj.docencia.modulo
+            )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        # Store the parent object (modulo) for use in formfield_for_foreignkey
+        self.parent_obj = obj
+        formset = super().get_formset(request, obj, **kwargs)
+        formset.form.base_fields["unidaddetrabajo"].widget.can_add_related = False
+        formset.form.base_fields["unidaddetrabajo"].widget.can_change_related = False
+        formset.form.base_fields["unidaddetrabajo"].widget.can_view_related = False
+
+        return formset
+
+
 @admin.register(Seguimiento)
 class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
     form = SeguimientoForm
@@ -469,7 +502,9 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         "get_estado_colored",
         "cumple_programacion",
         "temario_actual",
+        "get_temario_completado",
     ]
+    inlines = [TemarioCompletadoInline]
 
     # Custom filter for Modulo that depends on año_academico
     class ModuloFilter(SimpleListFilter):
@@ -547,6 +582,18 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
 
     get_mes.short_description = "Mes"
     get_mes.admin_order_field = "mes"
+
+    def get_temario_completado(self, obj):
+        return ", ".join([str(unidad) for unidad in obj.temario_completado.all()])
+
+    get_temario_completado.short_description = "Temario Completado"
+    get_temario_completado.admin_order_field = "temario_completado"
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(SeguimientoAdmin, self).get_form(request, obj, **kwargs)
+        print(form.base_fields)
+        form.base_fields["ultimo_contenido_impartido"].widget.can_add_related = False
+        return form
 
     class Media:
         js = [
