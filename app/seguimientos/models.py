@@ -235,7 +235,7 @@ class MotivoNoCumpleSeguimiento(models.TextChoices):
         "SECUENCIA",
         "Cambio en la Secuenciación y distribución temporal de las UTs",
     )
-    ACTIVIDADES = "ACTIVIDADES", "Cambio en actividades"
+    ACTIVIDADES = "ACTIVIDADES", "Cambio en Actividades"
     EVALUACION = "EVALUACION", "Cambio en Evaluación"
 
 
