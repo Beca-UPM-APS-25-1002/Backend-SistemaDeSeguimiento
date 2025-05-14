@@ -709,19 +709,11 @@ class RecordatorioEmailConfigAdmin(SingletonModelAdmin):
     Admin para configurar la plantilla de correo electrónico de recordatorio.
     """
 
-    readonly_fields = ("help_text",)
     fieldsets = (
         (
             None,
             {
                 "fields": ("asunto", "contenido"),
-            },
-        ),
-        (
-            "Ayuda",
-            {
-                "fields": ("help_text",),
-                "classes": ("collapse",),
             },
         ),
     )

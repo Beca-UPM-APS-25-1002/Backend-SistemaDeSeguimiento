@@ -294,6 +294,15 @@ class RecordatorioEmailConfig(SingletonModel):
     )
 
     contenido = models.TextField(
+        help_text="""Variables disponibles: <br />
+- {{ nombre_profesor }}: Nombre del profesor <br />
+- {{ mes }}: Nombre del mes del seguimiento <br />
+- {{ listado_docencias }}: Lista de docencias pendientes <br />
+- {{ url_frontend }}: URL del frontend para acceder al sistema <br />
+Debes añadir por lo menos el mes y el listado de docencias al contenido. <br />
+Puedes poner las variables también en el asunto. <br />
+¡Cuidado, tienes que añadir un espacio antes y despues del nombre de cada variable!
+        """,
         default="""Estimado/a {{ nombre_profesor }},
 
 Le recordamos que tiene pendiente realizar el seguimiento del mes de {{ mes }} para las siguientes docencias:
@@ -305,21 +314,7 @@ Puede completar los seguimientos pendientes haciendo clic en el siguiente enlace
 
 Gracias por su colaboración.
 
-Este es un correo automático, por favor no responda a esta dirección."""
-    )
-
-    help_text = models.TextField(
-        verbose_name="Información de ayuda",
-        default="""Variables disponibles:
-- {{ nombre_profesor }}: Nombre del profesor
-- {{ mes }}: Nombre del mes del seguimiento
-- {{ listado_docencias }}: Lista de docencias pendientes
-- {{ url_frontend }}: URL del frontend para acceder al sistema
-Debes añadir por lo menos el mes y el listado de docencias al contenido.
-Puedes poner las variables también en el asunto.
-¡Cuidado, tienes que añadir un espacio antes y despues del nombre de cada variable! 
-        """,
-        editable=False,
+Este es un correo automático, por favor no responda a esta dirección.""",
     )
 
     def clean(self):
