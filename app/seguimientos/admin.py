@@ -597,7 +597,6 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(SeguimientoAdmin, self).get_form(request, obj, **kwargs)
-        print(form.base_fields)
         form.base_fields["ultimo_contenido_impartido"].widget.can_add_related = False
         return form
 
