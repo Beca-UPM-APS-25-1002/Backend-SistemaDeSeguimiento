@@ -562,7 +562,13 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         ("Estado del Seguimiento", {"fields": ("estado", "justificacion_estado")}),
         (
             "Cumplimiento de la Programación",
-            {"fields": ("cumple_programacion", "justificacion_cumple_programacion")},
+            {
+                "fields": (
+                    "cumple_programacion",
+                    "justificacion_cumple_programacion",
+                    "motivo_no_cumple_programacion",
+                )
+            },
         ),
     )
 

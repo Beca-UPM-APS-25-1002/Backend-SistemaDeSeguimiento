@@ -229,6 +229,16 @@ class EvaluacionSeguimiento(models.TextChoices):
     TERCERA = "TERCERA", "Tercera"
 
 
+class MotivoNoCumpleSeguimiento(models.TextChoices):
+    CONTENIDOS = "CONTENIDOS", "Cambio en los Contenidos"
+    SECUENCIA = (
+        "SECUENCIA",
+        "Cambio en la Secuenciación y distribución temporal de las UTs",
+    )
+    ACTIVIDADES = "ACTIVIDADES", "Cambio en actividades"
+    EVALUACION = "EVALUACION", "Cambio en Evaluación"
+
+
 class Seguimiento(models.Model):
     temario_completado = models.ManyToManyField(UnidadDeTrabajo, blank=True)
     temario_actual = models.ForeignKey(
@@ -243,6 +253,9 @@ class Seguimiento(models.Model):
     justificacion_estado = models.CharField(max_length=255, blank=True)
     cumple_programacion = models.BooleanField(default=True)
     justificacion_cumple_programacion = models.CharField(max_length=255, blank=True)
+    motivo_no_cumple_programacion = models.CharField(
+        choices=MotivoNoCumpleSeguimiento.choices, blank=True
+    )
     mes = models.IntegerField(validators=[MaxValueValidator(12), MinValueValidator(1)])
     docencia = models.ForeignKey(
         Docencia, on_delete=models.CASCADE, related_name="seguimientos"
@@ -269,6 +282,29 @@ class Seguimiento(models.Model):
 
     def __str__(self):
         return f"Seguimiento {self.docencia} - Mes {self.mes}"
+
+    def clean(self):
+        super().clean()
+        if self.estado != EstadoSeguimiento.AL_DIA and not self.justificacion_estado:
+            raise ValidationError(
+                {
+                    "justificacion_estado": 'Este campo es requerido cuando el estado es diferente de "Al día".'
+                }
+            )
+
+        if self.cumple_programacion is False:
+            if not self.justificacion_cumple_programacion:
+                raise ValidationError(
+                    {
+                        "justificacion_cumple_programacion": "Este campo es requerido cuando no cumple la programación."
+                    }
+                )
+            if not self.motivo_no_cumple_programacion:
+                raise ValidationError(
+                    {
+                        "motivo_no_cumple_programacion": "Este campo es requerido cuando no cumple la programación."
+                    }
+                )
 
     class Meta:
         # Garantizar un seguimiento al mes por docencia
