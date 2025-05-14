@@ -300,7 +300,13 @@ class EnviarRecordatorioSeguimientoView(APIView):
                 emails_enviados += 1
             except Exception:
                 continue
-
+        if emails_enviados == 0:
+            return Response(
+                {
+                    "error": "Error al enviar los emails, no se ha podido mandar ninguno, revisa la configuración del servidor email"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return Response(
             {
                 "status": "success",
