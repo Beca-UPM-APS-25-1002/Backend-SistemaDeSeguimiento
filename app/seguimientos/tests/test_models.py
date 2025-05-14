@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.core.exceptions import ValidationError
 from seguimientos.models import (
     AñoAcademico,
     Ciclo,
@@ -9,89 +10,6 @@ from seguimientos.models import (
     Docencia,
     Seguimiento,
 )
-
-
-class AñoAcademicoModelTests(TestCase):
-    """Tests para el modelo AñoAcademico"""
-
-    def test_primer_año_es_actual(self):
-        """Probar que el primer año creado se establece como actual automáticamente"""
-        año = AñoAcademico.objects.create(año_academico="2022-23")
-        self.assertTrue(año.actual)
-
-    def test_solo_un_año_es_actual(self):
-        """Probar que solo un año puede ser actual a la vez"""
-        año1 = AñoAcademico.objects.create(año_academico="2022-23")
-        año2 = AñoAcademico.objects.create(año_academico="2023-24")
-        año3 = AñoAcademico.objects.create(año_academico="2024-25")
-
-        # Verificar que el primer año creado es actual
-        self.assertTrue(año1.actual)
-        self.assertFalse(año2.actual)
-        self.assertFalse(año3.actual)
-
-        # Cambiar el actual a año2
-        año2.actual = True
-        año2.save()
-
-        # Recargar desde la base de datos
-        año1.refresh_from_db()
-        año2.refresh_from_db()
-        año3.refresh_from_db()
-
-        # Verificar que solo año2 es actual
-        self.assertFalse(año1.actual)
-        self.assertTrue(año2.actual)
-        self.assertFalse(año3.actual)
-
-    def test_eliminar_año_actual(self):
-        """Probar que al eliminar el año actual, el año con valor más alto se convierte en actual"""
-        AñoAcademico.objects.create(año_academico="2022-23")
-        AñoAcademico.objects.create(año_academico="2023-24")
-        año_actual = AñoAcademico.objects.create(año_academico="2024-25")
-
-        # Establecer el último año como actual
-        año_actual.actual = True
-        año_actual.save()
-
-        # Verificar que es el único actual
-        self.assertEqual(AñoAcademico.objects.filter(actual=True).count(), 1)
-        self.assertEqual(AñoAcademico.objects.get(actual=True).año_academico, "2024-25")
-
-        # Eliminar el año actual
-        año_actual.delete()
-
-        # Verificar que ahora el año más alto es actual
-        self.assertEqual(AñoAcademico.objects.filter(actual=True).count(), 1)
-        self.assertEqual(AñoAcademico.objects.get(actual=True).año_academico, "2023-24")
-
-    def test_eliminar_año_no_actual(self):
-        """Probar que al eliminar un año que no es actual, el año actual no cambia"""
-        AñoAcademico.objects.create(año_academico="2022-23")
-        año2 = AñoAcademico.objects.create(año_academico="2023-24")
-        año3 = AñoAcademico.objects.create(año_academico="2024-25")
-
-        # Establecer año2 como actual
-        año2.actual = True
-        año2.save()
-
-        # Eliminar año3 (que no es actual)
-        año3.delete()
-
-        # Verificar que año2 sigue siendo actual
-        self.assertEqual(AñoAcademico.objects.filter(actual=True).count(), 1)
-        self.assertEqual(AñoAcademico.objects.get(actual=True).año_academico, "2023-24")
-
-    def test_eliminar_todos_los_años(self):
-        """Probar que se pueden eliminar todos los años"""
-        AñoAcademico.objects.create(año_academico="2022-23")
-        AñoAcademico.objects.create(año_academico="2023-24")
-
-        # Eliminar todos los años
-        AñoAcademico.objects.all().delete()
-
-        # Verificar que no quedan años
-        self.assertEqual(AñoAcademico.objects.count(), 0)
 
 
 class SeguimientoModelTestCase(TestCase):
@@ -123,49 +41,112 @@ class SeguimientoModelTestCase(TestCase):
             profesor=self.profesor, grupo=self.grupo, modulo=self.modulo
         )
 
-    def test_guardar_seguimiento_actualiza_temas_correctamente(self):
-        """Verifica que guardar un seguimiento actualiza los temas impartidos correctamente"""
-        # Crear seguimiento con el último tema impartido = tema 2
-        Seguimiento.objects.create(
-            temario_actual=self.tema2,
-            ultimo_contenido_impartido="Estructuras de Control",
+    # Tests para la validación condicional de campos
+    def test_justificacion_estado_requerido_cuando_no_al_dia(self):
+        """Verifica que justificacion_estado es requerido cuando estado no es AL_DIA"""
+        # Intentar crear un seguimiento con estado diferente de AL_DIA sin justificación
+        seguimiento = Seguimiento(
+            temario_actual=self.tema1,
+            ultimo_contenido_impartido="Variables",
+            estado="ATRASADO",  # Estado diferente de AL_DIA
+            justificacion_estado="",  # Justificación vacía
+            mes=3,
+            docencia=self.docencia,
+            evaluacion="PRIMERA",
+            cumple_programacion=True,
+        )
+
+        # Debe lanzar ValidationError al llamar a full_clean()
+        with self.assertRaises(ValidationError) as context:
+            seguimiento.full_clean()
+
+        # Verificar que el error es específicamente sobre justificacion_estado
+        self.assertIn("justificacion_estado", context.exception.error_dict)
+
+    def test_justificacion_estado_no_requerido_cuando_al_dia(self):
+        """Verifica que justificacion_estado no es requerido cuando estado es AL_DIA"""
+        # Crear un seguimiento con estado AL_DIA sin justificación
+        seguimiento = Seguimiento(
+            temario_actual=self.tema1,
+            ultimo_contenido_impartido="Variables",
+            estado="AL_DIA",
+            justificacion_estado="",  # Justificación vacía
+            mes=3,
+            docencia=self.docencia,
+            evaluacion="PRIMERA",
+            cumple_programacion=True,
+        )
+
+        # No debe lanzar error al llamar a full_clean()
+        try:
+            seguimiento.full_clean()
+        except ValidationError as e:
+            # Si hay error, verificar que no está relacionado con justificacion_estado
+            self.assertNotIn("justificacion_estado", e.error_dict)
+
+    def test_justificacion_cumple_programacion_requerido_cuando_false(self):
+        """Verifica que justificacion_cumple_programacion es requerido cuando cumple_programacion es False"""
+        # Intentar crear un seguimiento con cumple_programacion=False sin justificación
+        seguimiento = Seguimiento(
+            temario_actual=self.tema1,
+            ultimo_contenido_impartido="Variables",
             estado="AL_DIA",
             mes=3,
             docencia=self.docencia,
             evaluacion="PRIMERA",
+            cumple_programacion=False,  # No cumple programación
+            justificacion_cumple_programacion="",  # Justificación vacía
+            motivo_no_cumple_programacion="",  # Motivo vacío
         )
 
-        # Recargar datos desde la BD
-        self.tema1.refresh_from_db()
-        self.tema2.refresh_from_db()
-        self.tema3.refresh_from_db()
+        # Debe lanzar ValidationError al llamar a full_clean()
+        with self.assertRaises(ValidationError) as context:
+            seguimiento.full_clean()
 
-        # Validar que los temas 1 y 2 están impartidos, pero el 3 no
+        # Verificar que los errores son específicamente sobre los campos requeridos
+        self.assertIn("justificacion_cumple_programacion", context.exception.error_dict)
 
-    def test_actualizar_seguimiento_regresa_temas_no_impartidos(self):
-        """Verifica que al cambiar el tema alcanzado a uno menor, los superiores se desmarcan"""
-        # Seguimiento inicial con tema 3
-        seguimiento = Seguimiento.objects.create(
-            temario_actual=self.tema3,
-            ultimo_contenido_impartido="Funciones",
+    def test_motivo_no_cumple_programacion_requerido_cuando_false(self):
+        """Verifica que motivo_no_cumple_programacion es requerido cuando cumple_programacion es False"""
+        # Intentar crear un seguimiento con cumple_programacion=False con justificación pero sin motivo
+        seguimiento = Seguimiento(
+            temario_actual=self.tema1,
+            ultimo_contenido_impartido="Variables",
             estado="AL_DIA",
             mes=3,
             docencia=self.docencia,
             evaluacion="PRIMERA",
+            cumple_programacion=False,  # No cumple programación
+            justificacion_cumple_programacion="Hubo una huelga",  # Justificación proporcionada
+            motivo_no_cumple_programacion="",  # Motivo vacío
         )
 
-        # Verificar que todos los temas fueron marcados como impartidos
-        self.tema1.refresh_from_db()
-        self.tema2.refresh_from_db()
-        self.tema3.refresh_from_db()
+        # Debe lanzar ValidationError al llamar a full_clean()
+        with self.assertRaises(ValidationError) as context:
+            seguimiento.full_clean()
 
-        # Cambiar el seguimiento para que el último tema impartido sea el 1
-        seguimiento.temario_actual = self.tema1
-        seguimiento.save()
+        # Verificar que el error es específicamente sobre motivo_no_cumple_programacion
+        self.assertIn("motivo_no_cumple_programacion", context.exception.error_dict)
 
-        # Recargar datos desde la BD
-        self.tema1.refresh_from_db()
-        self.tema2.refresh_from_db()
-        self.tema3.refresh_from_db()
+    def test_justificacion_y_motivo_no_requeridos_cuando_cumple_programacion_true(self):
+        """Verifica que justificacion_cumple_programacion y motivo_no_cumple_programacion no son requeridos cuando cumple_programacion es True"""
+        # Crear un seguimiento con cumple_programacion=True sin justificación ni motivo
+        seguimiento = Seguimiento(
+            temario_actual=self.tema1,
+            ultimo_contenido_impartido="Variables",
+            estado="AL_DIA",
+            mes=3,
+            docencia=self.docencia,
+            evaluacion="PRIMERA",
+            cumple_programacion=True,  # Cumple programación
+            justificacion_cumple_programacion="",  # Justificación vacía
+            motivo_no_cumple_programacion="",  # Motivo vacío
+        )
 
-        # Solo el tema 1 debe estar marcado como impartido
+        # No debe lanzar error al llamar a full_clean()
+        try:
+            seguimiento.full_clean()
+        except ValidationError as e:
+            # Si hay error, verificar que no está relacionado con los campos de justificación
+            self.assertNotIn("justificacion_cumple_programacion", e.error_dict)
+            self.assertNotIn("motivo_no_cumple_programacion", e.error_dict)

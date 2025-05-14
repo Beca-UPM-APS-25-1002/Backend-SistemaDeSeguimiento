@@ -562,7 +562,13 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         ("Estado del Seguimiento", {"fields": ("estado", "justificacion_estado")}),
         (
             "Cumplimiento de la Programación",
-            {"fields": ("cumple_programacion", "justificacion_cumple_programacion")},
+            {
+                "fields": (
+                    "cumple_programacion",
+                    "justificacion_cumple_programacion",
+                    "motivo_no_cumple_programacion",
+                )
+            },
         ),
     )
 
@@ -591,7 +597,6 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(SeguimientoAdmin, self).get_form(request, obj, **kwargs)
-        print(form.base_fields)
         form.base_fields["ultimo_contenido_impartido"].widget.can_add_related = False
         return form
 

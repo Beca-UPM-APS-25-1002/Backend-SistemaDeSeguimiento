@@ -293,6 +293,7 @@ Consigue los seguimientos del profesor autenticado. Se puede filtrar con los par
     "justificacion_estado": "",
     "cumple_programacion": true,
     "justificacion_cumple_programacion": "",
+    "motivo_no_cumple_programacion": "",
     "mes": 4,
     "evaluacion": "PRIMERA",
     "temario_actual": 78,
@@ -329,6 +330,7 @@ Consigue los seguimientos del profesor autenticado. Se puede filtrar con los par
     "justificacion_estado": "",
     "cumple_programacion": true,
     "justificacion_cumple_programacion": "",
+    "motivo_no_cumple_programacion": "",
     "mes": 5,
     "evaluacion": "SEGUNDA",
     "temario_actual": 78,
@@ -347,13 +349,25 @@ Recibe:
   "temario_completado": [76, 77],
   "ultimo_contenido_impartido": "Ultimo contenido",
   "estado": "ADELANTADO", //(ATRASADO, AL_DIA)
-  "justificacion_estado": "justifiacion",
-  "cumple_programacion": true,
-  "justificacion_cumple_programacion": "justificiacion",
+  "justificacion_estado": "justificacion",
+  "cumple_programacion": false,
+  "justificacion_cumple_programacion": "justificicacion",
+  "motivo_no_cumple_programacion": "CONTENIDOS",
   "mes": 5,
   "evaluacion": "SEGUNDA", //(PRIMERA, TERCERA)
   "temario_actual": 1,
   "docencia": 1
+}
+```
+
+Los motivos posibles son
+
+```json
+{
+  "CONTENIDOS": "Cambio en los Contenidos",
+  "SECUENCIA": "Cambio en la Secuenciación y distribución temporal de las UTs",
+  "ACTIVIDADES": "Cambio en actividades",
+  "EVALUACION": "Cambio en Evaluación"
 }
 ```
 
@@ -374,6 +388,7 @@ Devuelve:
   "justificacion_estado": "",
   "cumple_programacion": true,
   "justificacion_cumple_programacion": "",
+  "motivo_no_cumple_programacion": "",
   "mes": 5,
   "temario_actual": 1,
   "docencia": 1
