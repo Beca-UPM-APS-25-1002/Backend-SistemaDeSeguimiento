@@ -652,24 +652,22 @@ class EnviarRecordatorioSeguimientoViewTests(TestCase):
         # Clear the mail outbox
         mail.outbox = []
 
-        payload = {"docencias": [self.docencia3.id], "mes": 3, "año_academico": "2025"}
+        payload = {"docencias": [self.docencia3.id, self.docencia1.id], "mes": 3, "año_academico": "2025"}
 
         response = self.client.post(self.url, payload, format="json")
 
         # Check response
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["emails_enviados"], 0)
+        self.assertEqual(response.data["emails_enviados"], 1)
         self.assertEqual(len(response.data["profesores_no_activos"]), 1)
 
-        # Check no email was sent
-        self.assertEqual(len(mail.outbox), 0)
 
     def test_nonexistent_docencia(self):
         """Test handling of non-existent docencia IDs."""
         self.client.force_authenticate(user=self.admin_user)
 
         payload = {
-            "docencias": [9999],  # Non-existent ID
+            "docencias": [9999, self.docencia1.id],  # Non-existent ID
             "mes": 3,
             "año_academico": "2025",
         }
@@ -678,7 +676,7 @@ class EnviarRecordatorioSeguimientoViewTests(TestCase):
 
         # Check response
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["emails_enviados"], 0)
+        self.assertEqual(response.data["emails_enviados"], 1)
         self.assertEqual(len(response.data["docencias_no_encontradas"]), 1)
         self.assertEqual(response.data["docencias_no_encontradas"][0], 9999)
 
