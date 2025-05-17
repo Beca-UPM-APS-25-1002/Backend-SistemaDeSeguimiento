@@ -116,8 +116,8 @@ class UnidadDeTrabajo(models.Model):
         return f"UT{self.numero_tema} - {self.titulo}"
 
     class Meta:
-        verbose_name = "Unidad de Temario"
-        verbose_name_plural = "Unidades de Temario"
+        verbose_name = "Unidad de Trabajo"
+        verbose_name_plural = "Unidades de Trabajo"
         ordering = ["numero_tema"]
         constraints = [
             models.UniqueConstraint(fields=["numero_tema", "modulo"], name="tema_unico")
