@@ -26,7 +26,7 @@ FROM python:3.13-slim
  
 #Setup Locale
 RUN apt-get update && \
-    apt-get install -y locales libpango1.0-dev && \
+    apt-get install -y locales libpango1.0-dev curl wget && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
     sed -i -e 's/# es_ES.UTF-8 UTF-8/es_ES.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales
