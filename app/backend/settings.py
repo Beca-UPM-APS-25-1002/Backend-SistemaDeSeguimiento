@@ -28,13 +28,14 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "1234")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "True") == "True"
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", default="localhost,127.0.0.1")
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(
+    ","
+)
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     "CSRF_TRUSTED_ORIGINS",
     default="http://localhost:8000,http://127.0.0.1:8000",
-)
+).split(",")
 
-ALLOWED_HOSTS = ["*"]
 FRONTEND_URL = os.environ.get("FRONTEND_URL")
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_ROOT = os.path.join(PROJECT_DIR, "static")
