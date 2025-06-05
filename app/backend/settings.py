@@ -161,6 +161,7 @@ REST_FRAMEWORK = {
 }
 # Email
 EMAIL_BACKEND = "dynamic_email.backend.DynamicEmailBackend"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
 EMAIL_FILE_PATH = "../tmp/app-messages"
 # Djoser
 parsed_url = urlparse(FRONTEND_URL)

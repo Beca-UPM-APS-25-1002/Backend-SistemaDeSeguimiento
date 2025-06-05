@@ -38,6 +38,7 @@ Backend de la aplicación de seguimiento
 SECRET_KEY="django-insecure-1seo&72qbf8$p6z2t&7m2%_mvnbslm$)g#wy4ix@bbruuwmug"
 DEBUG=False #False en producción
 FRONTEND_URL="http://localhost:5173" #URL de la applicación de frontend
+DEFAULT_FROM_EMAIL="mail@mailserver.com" #Dirección desde la que se mandarán los correos
 DB_NAME="seguimientos" #Datos de la base de datos postgresql
 DB_USER="postgres"
 DB_PASSWORD="1234"
