@@ -244,15 +244,15 @@ class Seguimiento(models.Model):
     temario_actual = models.ForeignKey(
         UnidadDeTrabajo, on_delete=models.RESTRICT, related_name="seguimientos"
     )
-    ultimo_contenido_impartido = models.CharField(max_length=255)
+    ultimo_contenido_impartido = models.CharField()
     estado = models.CharField(
         max_length=10,
         choices=EstadoSeguimiento.choices,
         default=EstadoSeguimiento.AL_DIA,
     )
-    justificacion_estado = models.CharField(max_length=255, blank=True)
+    justificacion_estado = models.CharField(blank=True)
     cumple_programacion = models.BooleanField(default=True)
-    justificacion_cumple_programacion = models.CharField(max_length=255, blank=True)
+    justificacion_cumple_programacion = models.CharField(blank=True)
     motivo_no_cumple_programacion = models.CharField(
         choices=MotivoNoCumpleSeguimiento.choices, blank=True
     )
