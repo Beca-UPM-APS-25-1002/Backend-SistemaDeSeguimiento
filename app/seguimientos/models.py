@@ -283,6 +283,9 @@ class Seguimiento(models.Model):
     def __str__(self):
         return f"Seguimiento {self.docencia} - Mes {self.mes}"
 
+    def get_motivo_display(self):
+        return MotivoNoCumpleSeguimiento(self.motivo_no_cumple_programacion).label
+
     def clean(self):
         super().clean()
         if self.estado != EstadoSeguimiento.AL_DIA and not self.justificacion_estado:

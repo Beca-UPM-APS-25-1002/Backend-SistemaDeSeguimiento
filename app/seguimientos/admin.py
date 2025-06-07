@@ -662,27 +662,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
 
             if mes not in seguimientos[año]:
                 seguimientos[año][mes] = []
-
-            seguimientos[año][mes].append(
-                {
-                    "id": seguimiento.id,
-                    "profesor": seguimiento.profesor.nombre,
-                    "modulo": seguimiento.modulo.nombre,
-                    "grupo": seguimiento.grupo.nombre,
-                    "ciclo": seguimiento.modulo.ciclo.nombre,
-                    "año_academico": seguimiento.año_academico,
-                    "mes": mes,
-                    "evaluacion": seguimiento.get_evaluacion_display(),
-                    "estado": seguimiento.get_estado_display(),
-                    "temario_actual": str(seguimiento.temario_actual),
-                    "ultimo_contenido_impartido": seguimiento.ultimo_contenido_impartido,
-                    "cumple_programacion": "Sí"
-                    if seguimiento.cumple_programacion
-                    else "No",
-                    "justificacion_estado": seguimiento.justificacion_estado,
-                    "justificacion_cumple_programacion": seguimiento.justificacion_cumple_programacion,
-                }
-            )
+            seguimientos[año][mes].append(seguimiento)
 
         context = {
             "seguimientos": seguimientos,
