@@ -183,6 +183,12 @@
                             <span class="label">Temario Actual:</span>
                             <span class="value">{{ seguimiento.temario_actual }}</span>
                         </div>
+                        <div class="data-item">
+                            <span class="label">Temario Completado:</span>
+                            {%for tema in seguimiento.temario_completado.all%}
+                            <span class="value">UT{{ tema.numero_tema }} - {{tema.titulo}}</span>
+                            {%endfor%}
+                        </div>
 
                         <div class="data-item">
                             <span class="label">Último Contenido Impartido:</span>
@@ -190,9 +196,23 @@
                         </div>
 
                         <div class="data-item">
-                            <span class="label">Cumple Programación:</span>
-                            <span class="value">{{ seguimiento.cumple_programacion }}</span>
+                            <span class="label">Cumple Programación:</span>    
+                            <span class="value">
+                                {%if seguimiento.cumple_programacion%}
+                                    Sí                            
+                                {%else%}
+                                    No
+                                {%endif%}
+                            </span>
                         </div>
+                        {% if seguimiento.motivo_no_cumple_programacion %}
+                            <div class="data-item">
+                                <span class="label">Motivo para no cumplir programación:</span>
+                                <div class="justify-box">
+                                    {{ seguimiento.get_motivo_display }}
+                                </div>
+                            </div>
+                        {% endif %}
                         {% if seguimiento.justificacion_estado %}
                             <div class="data-item">
                                 <span class="label">Justificación del Estado:</span>
@@ -201,6 +221,7 @@
                                 </div>
                             </div>
                         {% endif %}
+
                             
                         {% if seguimiento.justificacion_cumple_programacion %}
                             <div class="data-item">
