@@ -35,6 +35,7 @@ from .models import (
     Seguimiento,
     UnidadDeTrabajo,
     RecordatorioEmailConfig,
+    MotivoNoCumpleSeguimiento,
 )
 
 admin.site.site_header = "Administración de Seguimientos"
@@ -435,6 +436,7 @@ class SeguimientoResource(resources.ModelResource):
             "estado",
             "justificacion_estado",
             "cumple_programacion",
+            "motivo_no_cumple_programacion",
             "justificacion_cumple_programacion",
         ]
 
@@ -447,8 +449,15 @@ class SeguimientoResource(resources.ModelResource):
     def dehydrate_cumple_programacion(self, obj):
         return "Sí" if obj.cumple_programacion else "No"
 
+    def dehydrate_motivo_no_cumple_programacion(self, obj):
+        return (
+            MotivoNoCumpleSeguimiento(obj.motivo_no_cumple_programacion).label
+            if obj.motivo_no_cumple_programacion
+            else ""
+        )
+
     def dehydrate_temario_completado(self, obj):
-        return ", ".join([str(unidad) for unidad in obj.temario_completado.all()])
+        return ";".join([str(unidad) for unidad in obj.temario_completado.all()])
 
 
 class SeguimientoForm(forms.ModelForm):
