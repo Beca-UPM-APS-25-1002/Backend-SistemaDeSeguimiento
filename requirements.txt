@@ -47,7 +47,7 @@ tablib[xlsx]==3.8.0; python_version >= '3.9'
 tinycss2==1.4.0; python_version >= '3.8'
 tinyhtml5==2.0.0; python_version >= '3.9'
 typing-extensions==4.13.2; python_version >= '3.8'
-urllib3==2.4.0; python_version >= '3.9'
+urllib3==2.5.0; python_version >= '3.9'
 weasyprint==65.1; python_version >= '3.9'
 webencodings==0.5.1
 whitenoise==6.9.0; python_version >= '3.9'
