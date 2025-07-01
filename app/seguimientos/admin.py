@@ -269,7 +269,7 @@ class AñoAcademicoAdmin(admin.ModelAdmin):
 @admin.register(Ciclo)
 class CicloAdmin(admin.ModelAdmin):
     list_display = ["nombre", "año_academico"]
-    search_fields = ["nombre", "año_academico"]
+    search_fields = ["nombre", "año_academico__año_academico"]
     list_filter = [CicloAñoAcademicoFilter]
     inlines = [GrupoInline, ModuloInline]
 
@@ -304,7 +304,7 @@ class ModuloAdmin(admin.ModelAdmin):
         "ciclo",
         "curso",
     ]
-    search_fields = ["nombre", "ciclo__nombre", "ciclo__año_academico"]
+    search_fields = ["nombre", "ciclo__nombre", "ciclo__año_academico__año_academico"]
     inlines = [UnidadDeTrabajoInline, DocenciaInline]
 
 
@@ -387,7 +387,7 @@ admin.site.register(Profesor, ProfesorAdmin)
 class DocenciaAdmin(admin.ModelAdmin):
     list_display = ["profesor", "modulo", "grupo", "get_año_academico"]
     list_filter = ["modulo__ciclo__año_academico", "grupo"]
-    search_fields = [
+    _fields = [
         "profesor__nombre",
         "modulo__nombre",
         "modulo__ciclo__año_academico",
@@ -551,7 +551,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         "docencia__profesor__nombre",
         "docencia__modulo__nombre",
         "docencia__grupo__nombre",
-        "docencia__modulo__ciclo__año_academico",
+        "docencia__modulo__ciclo__año_academico__año_academico",
     ]
     autocomplete_fields = ["docencia", "temario_actual"]
     resource_classes = [SeguimientoResource]
