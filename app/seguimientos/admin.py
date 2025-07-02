@@ -478,11 +478,12 @@ class TemarioCompletadoInline(admin.TabularInline):
     extra = 1
     verbose_name = "Temario Completado"
     verbose_name_plural = "Temarios Completados"
+    ordering = ("unidaddetrabajo_id",)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Filter temario based on docencia
         if (
-            db_field.name == "unidaddetrabajo"
+            db_field.name == "Unidad de Trabajo"
             and hasattr(self, "parent_obj")
             and self.parent_obj
         ):
@@ -510,8 +511,6 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         "get_mes",
         "get_estado_colored",
         "cumple_programacion",
-        "temario_actual",
-        "get_temario_completado",
     ]
     inlines = [TemarioCompletadoInline]
 
@@ -539,11 +538,23 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
                 return queryset.filter(docencia__modulo=self.value())
             return queryset
 
+    class MesFilter(SimpleListFilter):
+        title = "mes"
+        parameter_name = "mes"
+
+        def lookups(self, request, model_admin):
+            return [(i, calendar.month_name[i].capitalize()) for i in range(1, 13)]
+
+        def queryset(self, request, queryset):
+            if self.value():
+                return queryset.filter(mes=self.value())
+            return queryset
+
     list_filter = [
         "estado",
         "cumple_programacion",
         BaseAñoAcademicoFilter,
-        "mes",
+        MesFilter,
         ModuloFilter,
         "docencia__profesor",
     ]
@@ -581,6 +592,29 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         ),
     )
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+
+        from django.db.models import Case, When, IntegerField
+
+        academic_order = Case(
+            When(mes=9, then=1),  # Septiembre
+            When(mes=10, then=2),  # Octubre
+            When(mes=11, then=3),  # Noviembre
+            When(mes=12, then=4),  # Diciembre
+            When(mes=1, then=5),  # Enero
+            When(mes=2, then=6),  # Febrero
+            When(mes=3, then=7),  # Marzo
+            When(mes=4, then=8),  # Abril
+            When(mes=5, then=9),  # Mayo
+            When(mes=6, then=10),  # Junio
+            When(mes=7, then=11),  # Julio
+            When(mes=8, then=12),  # Agosto
+            output_field=IntegerField(),
+        )
+
+        return qs.annotate(academic_month_order=academic_order)
+
     def get_estado_colored(self, obj):
         colors = {"ATRASADO": "red", "AL_DIA": "green", "ADELANTADO": "blue"}
         return format_html(
@@ -596,13 +630,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
         return calendar.month_name[obj.mes].capitalize()
 
     get_mes.short_description = "Mes"
-    get_mes.admin_order_field = "mes"
-
-    def get_temario_completado(self, obj):
-        return ", ".join([str(unidad) for unidad in obj.temario_completado.all()])
-
-    get_temario_completado.short_description = "Temario Completado"
-    get_temario_completado.admin_order_field = "temario_completado"
+    get_mes.admin_order_field = "academic_month_order"
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(SeguimientoAdmin, self).get_form(request, obj, **kwargs)

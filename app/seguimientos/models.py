@@ -14,7 +14,10 @@ class AñoAcademico(models.Model):
     año_academico = models.CharField(
         null=False, max_length=7, primary_key=True, validators=[validate_año]
     )
-    actual = models.BooleanField(default=False)
+    actual = models.BooleanField(
+        default=False,
+        help_text="Define el año actual, este será el año al que tendrán acceso los usuarios en la aplicación, y será el filtro por defecto de la interfaz administrativa. Cuando se marca un año como actual se desmarca el que lo fuera previamente de manera automática.",
+    )
 
     def __str__(self):
         return self.año_academico
