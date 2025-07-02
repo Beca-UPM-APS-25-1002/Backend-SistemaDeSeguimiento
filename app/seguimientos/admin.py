@@ -474,16 +474,26 @@ class SeguimientoForm(forms.ModelForm):
 
 # Create an inline for UnidadDeTrabajo within the Seguimiento admin
 class TemarioCompletadoInline(admin.TabularInline):
+    class TemarioCompletadoInlineForm(forms.ModelForm):
+        class Meta:
+            model = Seguimiento.temario_completado.through
+            fields = "__all__"
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.fields["unidaddetrabajo"].label = "Unidad de Trabajo"
+
     model = Seguimiento.temario_completado.through  # Use the through model
     extra = 1
+    form = TemarioCompletadoInlineForm
     verbose_name = "Temario Completado"
     verbose_name_plural = "Temarios Completados"
-    ordering = ("unidaddetrabajo_id",)
+    ordering = ("unidaddetrabajo__numero_tema",)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Filter temario based on docencia
         if (
-            db_field.name == "Unidad de Trabajo"
+            db_field.name == "unidaddetrabajo"
             and hasattr(self, "parent_obj")
             and self.parent_obj
         ):
