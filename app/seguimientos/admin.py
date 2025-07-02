@@ -2,7 +2,7 @@ import calendar
 from django.contrib.admin import SimpleListFilter
 from dal import autocomplete
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin  # noqa: F401
 from django.contrib.auth.models import Group
 from django.forms import ModelForm
@@ -11,6 +11,7 @@ from django.urls import path
 from django.utils.html import format_html
 from solo.admin import SingletonModelAdmin
 from import_export import fields, resources
+from django.forms.models import BaseInlineFormSet
 from import_export.admin import (
     ExportMixin,
 )
@@ -72,7 +73,15 @@ class GrupoInline(admin.TabularInline):
 class ModuloInline(admin.TabularInline):
     model = Modulo
     extra = 1
-    fields = ["nombre", "curso"]
+    fields = ["nombre", "curso", "unidad_hint"]
+    readonly_fields = ["unidad_hint"]
+
+    def unidad_hint(self, instance):
+        if not instance.unidades_de_temario.exists():
+            return "⚠️ Recuerda añadir Unidades de Trabajo después de guardar el módulo."
+        return "✅"
+
+    unidad_hint.short_description = "Tiene unidades de trabajo?"
 
 
 @admin.register(AñoAcademico)
@@ -273,9 +282,34 @@ class CicloAdmin(admin.ModelAdmin):
     list_filter = [CicloAñoAcademicoFilter]
     inlines = [GrupoInline, ModuloInline]
 
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+
+        ciclo = form.instance
+        modulos_sin_unidades = ciclo.modulos.filter(unidades_de_temario__isnull=True)
+
+        if modulos_sin_unidades.exists():
+            names = ", ".join(modulos_sin_unidades.values_list("nombre", flat=True))
+            messages.warning(
+                request,
+                f"Los siguientes módulos no tienen Unidades de Trabajo: {names}. "
+                "Recuerda agregarlas desde la página de cada módulo.",
+            )
+
 
 class UnidadDeTrabajoInline(admin.TabularInline):
+    class UnidadDeTrabajoInlineFormSet(BaseInlineFormSet):
+        def clean(self):
+            super().clean()
+            has_at_least_one = any(
+                form.cleaned_data and not form.cleaned_data.get("DELETE", False)
+                for form in self.forms
+            )
+            if not has_at_least_one:
+                raise ValidationError("Debes agregar al menos una Unidad de Trabajo.")
+
     model = UnidadDeTrabajo
+    formset = UnidadDeTrabajoInlineFormSet
     extra = 1
     fields = [
         "numero_tema",
