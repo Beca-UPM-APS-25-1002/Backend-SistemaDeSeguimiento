@@ -287,7 +287,8 @@ class CicloAdmin(admin.ModelAdmin):
 
         ciclo = form.instance
         modulos_sin_unidades = ciclo.modulos.filter(unidades_de_temario__isnull=True)
-
+        # Este código mira los modulos creados a partir de un ciclo y avisa que se tienen
+        # que crear unidades de temario para que funcione correctamente
         if modulos_sin_unidades.exists():
             names = ", ".join(modulos_sin_unidades.values_list("nombre", flat=True))
             messages.warning(
@@ -300,6 +301,11 @@ class CicloAdmin(admin.ModelAdmin):
 class UnidadDeTrabajoInline(admin.TabularInline):
     class UnidadDeTrabajoInlineFormSet(BaseInlineFormSet):
         def clean(self):
+            """
+            Verifica que haya por lo menos una unidad de trabajo,
+            esta lógica se aplica aquí y no en el modelo para seguir
+            permitiendo la creación dentro de un objeto ciclo
+            """
             super().clean()
             has_at_least_one = any(
                 form.cleaned_data and not form.cleaned_data.get("DELETE", False)
@@ -395,7 +401,7 @@ class ProfesorForm(ModelForm):
 
 
 class ProfesorAdmin(admin.ModelAdmin):
-    form = ProfesorForm  # Usa el formulario personalizado
+    form = ProfesorForm
     list_display = ["nombre", "email", "activo", "es_admin"]
     list_filter = ["activo", "is_admin"]
     search_fields = ["nombre", "email"]
@@ -443,6 +449,11 @@ class DocenciaAdmin(admin.ModelAdmin):
 
 
 class SeguimientoResource(resources.ModelResource):
+    """
+    Resource that defines how the export module exports Seguimientos to
+    table files (csv, xlsx...)
+    """
+
     profesor = fields.Field(
         column_name="Profesor", attribute="docencia__profesor__nombre"
     )
@@ -497,6 +508,10 @@ class SeguimientoResource(resources.ModelResource):
 
 
 class SeguimientoForm(forms.ModelForm):
+    """
+    Form to show only Unidades de Trabajo from the selected docencia in a Seguimiento
+    """
+
     class Meta:
         model = Seguimiento
         fields = "__all__"
@@ -510,6 +525,10 @@ class SeguimientoForm(forms.ModelForm):
 
 # Create an inline for UnidadDeTrabajo within the Seguimiento admin
 class TemarioCompletadoInline(admin.TabularInline):
+    """
+    Inline for temario completado, a list of Unidades de trabajo that were completed in the seguimiento
+    """
+
     class TemarioCompletadoInlineForm(forms.ModelForm):
         class Meta:
             model = Seguimiento.temario_completado.through
@@ -527,7 +546,7 @@ class TemarioCompletadoInline(admin.TabularInline):
     ordering = ("unidaddetrabajo__numero_tema",)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        # Filter temario based on docencia
+        # Filter temario based on docencia's modulo
         if (
             db_field.name == "unidaddetrabajo"
             and hasattr(self, "parent_obj")
@@ -542,6 +561,7 @@ class TemarioCompletadoInline(admin.TabularInline):
         # Store the parent object (modulo) for use in formfield_for_foreignkey
         self.parent_obj = obj
         formset = super().get_formset(request, obj, **kwargs)
+        # Remove buttons to edit, add or view unidades de trabajos
         formset.form.base_fields["unidaddetrabajo"].widget.can_add_related = False
         formset.form.base_fields["unidaddetrabajo"].widget.can_change_related = False
         formset.form.base_fields["unidaddetrabajo"].widget.can_view_related = False
@@ -640,7 +660,7 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-
+        # Adds a calculated column to be able to order the months by academic order (Starting in september)
         from django.db.models import Case, When, IntegerField
 
         academic_order = Case(
@@ -658,7 +678,6 @@ class SeguimientoAdmin(ExportMixin, admin.ModelAdmin):
             When(mes=8, then=12),  # Agosto
             output_field=IntegerField(),
         )
-
         return qs.annotate(academic_month_order=academic_order)
 
     def get_estado_colored(self, obj):

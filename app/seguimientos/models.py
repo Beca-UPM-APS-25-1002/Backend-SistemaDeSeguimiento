@@ -23,7 +23,7 @@ class AñoAcademico(models.Model):
         return self.año_academico
 
     def save(self, *args, **kwargs):
-        """Invalidamos el cache de años si se ha registrado un nuevo modulo"""
+        """Invalidamos el cache de años si se ha registrado un nuevo año actual"""
         # Comprobamos si este es el primer registro creado
         if not AñoAcademico.objects.exists():
             self.actual = True
@@ -183,7 +183,8 @@ class Profesor(AbstractUser):
         return self.nombre
 
     def save(self, *args, **kwargs):
-        """Hasheamos la contraseña en caso de que no haya sido hasheada"""
+        """Hasheamos la contraseña en caso de que no haya sido hasheada,
+        esto hace falta para modificaciones a través de admin"""
         if self.password and not self.password.startswith(
             ("pbkdf2_sha256$", "bcrypt$", "argon2")
         ):
@@ -291,13 +292,14 @@ class Seguimiento(models.Model):
 
     def clean(self):
         super().clean()
+        # Tiene que haber una justificación si el estado no es AL DIA
         if self.estado != EstadoSeguimiento.AL_DIA and not self.justificacion_estado:
             raise ValidationError(
                 {
                     "justificacion_estado": 'Este campo es requerido cuando el estado es diferente de "Al día".'
                 }
             )
-
+        # Tiene que haber motivo y justificación si no cumple programación
         if self.cumple_programacion is False:
             if not self.justificacion_cumple_programacion:
                 raise ValidationError(

@@ -210,7 +210,7 @@ JAZZMIN_SETTINGS = {
     ],
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
-    "related_modal_active": False,
+    "related_modal_active": False,  # No tocar, si se pone a True falla por razones de seguridad de los navegadores
     "changeform_format": "single",
     "theme": "flatly",
     "dark_mode_theme": "darkly",
