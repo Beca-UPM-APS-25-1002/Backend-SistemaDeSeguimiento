@@ -451,6 +451,7 @@ class SeguimientoResource(resources.ModelResource):
     nombre_modulo = fields.Field(
         column_name="Modulo", attribute="docencia__modulo__nombre"
     )
+    curso = fields.Field(column_name="Curso", attribute="docencia__modulo__curso")
     grupo = fields.Field(column_name="Grupo", attribute="docencia__grupo__nombre")
     temario_actual = fields.Field(column_name="Temario Alcanzado")
     cumple_programacion = fields.Field(column_name="Cumple Programación")
@@ -460,6 +461,7 @@ class SeguimientoResource(resources.ModelResource):
         fields = [
             "profesor",
             "ciclo",
+            "curso",
             "nombre_modulo",
             "grupo",
             "mes",
