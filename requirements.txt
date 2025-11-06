@@ -1,6 +1,6 @@
 -i https://pypi.org/simple
 asgiref==3.8.1; python_version >= '3.8'
-brotli==1.1.0
+brotli==1.2.0
 certifi==2025.4.26; python_version >= '3.6'
 cffi==1.17.1; python_version >= '3.8'
 charset-normalizer==3.4.2; python_version >= '3.7'
