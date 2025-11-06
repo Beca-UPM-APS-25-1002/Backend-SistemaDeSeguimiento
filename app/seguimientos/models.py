@@ -49,8 +49,8 @@ class AñoAcademico(models.Model):
                 highest_year.save()
 
     class Meta:
-        verbose_name = "Año Academico"
-        verbose_name_plural = "Años Academicos"
+        verbose_name = "Año Académico"
+        verbose_name_plural = "Años Académicos"
 
 
 class Ciclo(models.Model):
@@ -102,6 +102,8 @@ class Modulo(models.Model):
             models.Index(fields=["ciclo"]),
         ]
         ordering = ["-ciclo__año_academico", "ciclo", "curso", "nombre"]
+        verbose_name = "Módulo"
+        verbose_name_plural = "Módulos"
 
 
 class UnidadDeTrabajo(models.Model):

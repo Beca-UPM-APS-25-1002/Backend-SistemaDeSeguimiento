@@ -330,9 +330,37 @@ class GrupoAdmin(admin.ModelAdmin):
     list_filter = [GrupoAndModuloAñoAcademicoFilter, "ciclo", "curso"]
     search_fields = ["nombre", "ciclo__nombre"]
 
+class ModuloExportResource(resources.ModelResource):
+    """
+    Exports each Modulo, including its Ciclo, Curso, Año Académico,
+    and related Unidades de Trabajo.
+    """
+
+    nombre = fields.Field(column_name="Módulo", attribute="nombre")
+    curso = fields.Field(column_name="Curso", attribute="curso")
+    ciclo = fields.Field(column_name="Ciclo", attribute="ciclo__nombre")
+    año_academico = fields.Field(column_name="Año Académico", attribute="ciclo__año_academico")
+    unidades_de_trabajo = fields.Field(column_name="Unidades de Trabajo")
+
+    class Meta:
+        model = Modulo
+        fields = ["nombre", "curso", "ciclo", "año_academico", "unidades_de_trabajo"]
+        export_order = ["año_academico", "ciclo", "curso", "nombre", "unidades_de_trabajo"]
+
+    def dehydrate_año_academico(self, obj):
+        return str(obj.ciclo.año_academico)
+
+    def dehydrate_unidades_de_trabajo(self, obj):
+        """
+        Combine all Unidades de Trabajo titles into a single semicolon-separated string.
+        Example: "UT1 - Introducción; UT2 - Herramientas básicas"
+        """
+        uts = obj.unidades_de_temario.all().order_by("numero_tema")
+        return "; ".join([f"UT{u.numero_tema} - {u.titulo}" for u in uts])
 
 @admin.register(Modulo)
-class ModuloAdmin(admin.ModelAdmin):
+class ModuloAdmin(ExportMixin, admin.ModelAdmin):
+    resource_class = ModuloExportResource
     list_display = [
         "nombre",
         "curso",
